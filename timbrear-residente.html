@@ -872,7 +872,7 @@
   const db        = getFirestore(app);
   const auth      = getAuth(app);
   const messaging = getMessaging(app);
-  const storage   = getStorage(app);
+  const storage   = getStorage(app, 'gs://timbrear-cdc41.firebasestorage.app');
   await signInAnonymously(auth);
 
   // ── Registrar Service Worker para push en background ──
@@ -1100,19 +1100,25 @@
   //  ATENDER / RECHAZAR
   // ═══════════════════════════════════════════════════════
   window.atenderLlamada = async () => {
-    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
-      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' });
-    }
+    // Ir al chat INMEDIATAMENTE sin esperar Firestore
     document.getElementById('chat-depto-ref').textContent = deptoParam;
     const msgs = document.getElementById('chatMsgs');
     msgs.innerHTML = `<div class="msg msg-system">Llamada conectada · Depto ${deptoParam}</div>`;
     showScreen('screen-chat-residente');
-    if (sesionActiva?.id && sesionActiva.id !== 'demo') escucharMensajes(sesionActiva.id);
+
+    // Actualizar Firestore en paralelo (no bloqueante)
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' })
+        .then(() => console.log('✅ Sesión marcada como activa'))
+        .catch(e => console.warn('⚠️ No se pudo actualizar sesión (igual funciona):', e.message));
+      escucharMensajes(sesionActiva.id);
+    }
   };
 
   window.rechazarLlamada = async () => {
     if (sesionActiva?.id && sesionActiva.id !== 'demo') {
-      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'rechazada' });
+      updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'rechazada' })
+        .catch(e => console.warn('No se pudo rechazar:', e.message));
     }
     sesionActiva = null;
     showScreen('screen-inicio');
@@ -1120,7 +1126,8 @@
 
   window.finalizarLlamada = async () => {
     if (sesionActiva?.id && sesionActiva.id !== 'demo') {
-      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'finalizada' });
+      updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'finalizada' })
+        .catch(e => console.warn('No se pudo finalizar:', e.message));
     }
     if (chatUnsub) { chatUnsub(); chatUnsub = null; }
     sesionActiva = null;
