@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TimbreAr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --negro:    #0d0d0d;
+      --grafito:  #1a1a1a;
+      --panel:    #232323;
+      --borde:    #333333;
+      --plata:    #8a8a8a;
+      --blanco:   #f0f0f0;
+      --dorado:   #c8a84b;
+      --dorado2:  #e8c96a;
+      --rojo:     #c0392b;
+      --verde:    #27ae60;
+      --azul:     #2980b9;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--negro);
+      color: var(--blanco);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── PANTALLAS ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .35s ease;
+      overflow-y: auto;
+      padding-bottom: 24px;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    /* ── PANTALLA BIENVENIDA ── */
+    #screen-welcome {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #2a2a2a 0%, #0d0d0d 70%);
+    }
+    .welcome-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .edificio-badge {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dorado);
+      font-weight: 500;
+    }
+    .portero-svg-wrap {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+      border: 2px solid var(--dorado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(200,168,75,.15), 0 8px 32px rgba(0,0,0,.6);
+      position: relative;
+    }
+    .portero-svg-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1px solid rgba(200,168,75,.2);
+    }
+    .welcome-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 42px;
+      letter-spacing: 4px;
+      color: var(--blanco);
+      line-height: 1;
+    }
+    .welcome-sub {
+      font-size: 13px;
+      color: var(--plata);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--dorado), var(--dorado2));
+      color: var(--negro);
+      border: none;
+      border-radius: 12px;
+      padding: 16px 48px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 4px 20px rgba(200,168,75,.3);
+      transition: transform .15s, box-shadow .15s;
+      margin-top: 8px;
+    }
+    .btn-primary:active { transform: scale(.97); box-shadow: 0 2px 10px rgba(200,168,75,.2); }
+
+    /* ── PANTALLA DEPARTAMENTOS ── */
+    #screen-depto {
+      background: var(--negro);
+    }
+    .dept-header {
+      width: 100%;
+      background: var(--grafito);
+      border-bottom: 1px solid var(--borde);
+      padding: 20px 24px 16px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .dept-header-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dorado);
+      margin-bottom: 4px;
+    }
+    .dept-header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 3px;
+      color: var(--blanco);
+    }
+    .dept-header-sub {
+      font-size: 12px;
+      color: var(--plata);
+      margin-top: 4px;
+    }
+    .dept-grid-wrap {
+      width: 100%;
+      padding: 24px 20px;
+    }
+    .dept-piso-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dorado);
+      margin-bottom: 12px;
+      margin-top: 8px;
+      padding-left: 4px;
+    }
+    .dept-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .dept-btn {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      padding: 20px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, transform .12s;
+      position: relative;
+      overflow: hidden;
+    }
+    .dept-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--dorado), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .dept-btn:active { transform: scale(.96); background: #2a2a2a; border-color: var(--dorado); }
+    .dept-btn:active::before { opacity: 1; }
+    .dept-btn-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      color: var(--blanco);
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .dept-btn-name {
+      font-size: 10px;
+      color: var(--plata);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .dept-btn-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    /* ── PANTALLA LLAMANDO ── */
+    #screen-calling {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #1a1a1a 0%, #0d0d0d 80%);
+    }
+    .calling-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .calling-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 2px solid var(--dorado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      color: var(--dorado);
+      position: relative;
+    }
+    .pulse-ring {
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      border: 2px solid var(--dorado);
+      animation: pulse 1.8s ease-out infinite;
+    }
+    .pulse-ring-2 {
+      position: absolute;
+      inset: -24px;
+      border-radius: 50%;
+      border: 1px solid var(--dorado);
+      animation: pulse 1.8s ease-out infinite .5s;
+    }
+    @keyframes pulse {
+      0%   { opacity: .7; transform: scale(1); }
+      100% { opacity: 0;  transform: scale(1.3); }
+    }
+    .calling-dept {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--blanco);
+      letter-spacing: 3px;
+    }
+    .calling-status {
+      font-size: 13px;
+      color: var(--plata);
+      letter-spacing: 1px;
+    }
+    .calling-dots span {
+      animation: blink 1.2s infinite;
+      font-size: 20px;
+      color: var(--dorado);
+    }
+    .calling-dots span:nth-child(2) { animation-delay: .2s; }
+    .calling-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+    .btn-colgar {
+      background: var(--rojo);
+      border: none;
+      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      font-size: 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(192,57,43,.4);
+      transition: transform .15s;
+      margin-top: 8px;
+    }
+    .btn-colgar:active { transform: scale(.93); }
+
+    /* ── PANTALLA CHAT ── */
+    #screen-chat {
+      background: var(--negro);
+    }
+    .chat-header {
+      width: 100%;
+      background: var(--grafito);
+      border-bottom: 1px solid var(--borde);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .chat-avatar-sm {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 1px solid var(--dorado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      color: var(--dorado);
+      flex-shrink: 0;
+    }
+    .chat-header-info {}
+    .chat-header-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blanco);
+    }
+    .chat-header-status {
+      font-size: 11px;
+      color: var(--verde);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chat-header-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--verde);
+      display: inline-block;
+    }
+    .chat-messages {
+      flex: 1;
+      width: 100%;
+      padding: 16px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      min-height: 0;
+      /* trick: grow to fill */
+      height: calc(100vh - 160px);
+    }
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-visitor {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      color: var(--blanco);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-resident {
+      background: linear-gradient(135deg, #1a3a5c, #1e4a7a);
+      border: 1px solid #2980b9;
+      color: var(--blanco);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .msg-system {
+      align-self: center;
+      font-size: 11px;
+      color: var(--plata);
+      background: rgba(255,255,255,.05);
+      border-radius: 20px;
+      padding: 5px 14px;
+    }
+    .msg-time {
+      font-size: 10px;
+      color: var(--plata);
+      margin-top: 4px;
+      text-align: right;
+    }
+    .chat-input-bar {
+      width: 100%;
+      background: var(--grafito);
+      border-top: 1px solid var(--borde);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      position: sticky;
+      bottom: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 24px;
+      padding: 12px 18px;
+      color: var(--blanco);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .chat-input:focus { border-color: var(--dorado); }
+    .chat-input::placeholder { color: var(--plata); }
+    .btn-send {
+      background: linear-gradient(135deg, var(--dorado), var(--dorado2));
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: transform .15s;
+    }
+    .btn-send:active { transform: scale(.93); }
+    .btn-audio {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      flex-shrink: 0;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-audio.recording {
+      background: rgba(192,57,43,.25);
+      border-color: var(--rojo);
+      animation: pulse-border 1s infinite;
+    }
+    @keyframes pulse-border { 0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.4)} 50%{box-shadow:0 0 0 6px rgba(192,57,43,0)} }
+
+    /* ── PANTALLA ABIERTO ── */
+    #screen-open {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #0d2a1a 0%, #0d0d0d 80%);
+    }
+    .open-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .open-icon {
+      font-size: 72px;
+      animation: pop .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+    .open-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 40px;
+      letter-spacing: 4px;
+      color: var(--verde);
+    }
+    .open-sub {
+      font-size: 13px;
+      color: var(--plata);
+      max-width: 240px;
+      line-height: 1.6;
+    }
+
+    /* ── PANTALLA NO DISPONIBLE ── */
+    #screen-unavailable {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #2a0d0d 0%, #0d0d0d 80%);
+    }
+    .unavail-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .unavail-icon { font-size: 64px; }
+    .unavail-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 3px;
+      color: var(--rojo);
+    }
+    .unavail-sub {
+      font-size: 13px;
+      color: var(--plata);
+      max-width: 240px;
+      line-height: 1.6;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 36px;
+      color: var(--blanco);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      margin-top: 8px;
+    }
+    .btn-secondary:active { background: var(--panel); border-color: var(--dorado); }
+
+    /* ── TIMER BAR ── */
+    .timer-bar-wrap {
+      width: 100%;
+      height: 3px;
+      background: var(--borde);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .timer-bar-wrap.visible { opacity: 1; }
+    .timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--dorado), var(--dorado2));
+      width: 100%;
+      transition: width linear;
+    }
+
+    /* ── VIDEO ── */
+    .video-container {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      display: none;
+      position: relative;
+    }
+    .video-container.active { display: block; }
+    #remoteVideo {
+      width: 100%;
+      border-radius: 16px;
+      background: #111;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+    }
+    #localVideo {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: 80px;
+      border-radius: 10px;
+      background: #111;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border: 1px solid var(--dorado);
+    }
+    .video-controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .btn-video-ctrl {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-video-ctrl.active { background: rgba(200,168,75,.2); border-color: var(--dorado); }
+    .btn-video-ctrl.end { background: var(--rojo); border-color: var(--rojo); }
+  </style>
+</head>
+<body>
+
+<!-- TIMER BAR -->
+<div class="timer-bar-wrap" id="timerBarWrap">
+  <div class="timer-bar" id="timerBar"></div>
+</div>
+
+<!-- ── PANTALLA 1: BIENVENIDA ── -->
+<div class="screen active" id="screen-welcome">
+  <div class="welcome-inner">
+    <p class="edificio-badge" id="edificioNombre">Edificio</p>
+    <div class="portero-svg-wrap">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Gorro -->
+        <rect x="22" y="12" width="36" height="8" rx="4" fill="#c8a84b"/>
+        <rect x="18" y="18" width="44" height="4" rx="2" fill="#e8c96a"/>
+        <!-- Cabeza -->
+        <circle cx="40" cy="32" r="14" fill="#d4a574"/>
+        <!-- Cara -->
+        <circle cx="35" cy="30" r="2" fill="#5a3a1a"/>
+        <circle cx="45" cy="30" r="2" fill="#5a3a1a"/>
+        <path d="M35 37 Q40 41 45 37" stroke="#5a3a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- Bigote -->
+        <path d="M36 34 Q40 36 44 34" stroke="#5a3a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- Cuello -->
+        <rect x="36" y="45" width="8" height="6" fill="#d4a574"/>
+        <!-- Cuerpo / uniforme -->
+        <path d="M20 52 Q20 46 40 46 Q60 46 60 52 L62 74 H18 Z" fill="#1a2a4a"/>
+        <!-- Solapas -->
+        <path d="M40 46 L30 58 L26 58 L38 46" fill="#c8a84b"/>
+        <path d="M40 46 L50 58 L54 58 L42 46" fill="#c8a84b"/>
+        <!-- Botones -->
+        <circle cx="40" cy="56" r="2" fill="#c8a84b"/>
+        <circle cx="40" cy="63" r="2" fill="#c8a84b"/>
+        <circle cx="40" cy="70" r="2" fill="#c8a84b"/>
+        <!-- Brazos -->
+        <path d="M20 52 L10 66 Q10 70 14 68 L24 56" fill="#1a2a4a"/>
+        <path d="M60 52 L70 66 Q70 70 66 68 L56 56" fill="#1a2a4a"/>
+        <!-- Manos -->
+        <circle cx="12" cy="68" r="4" fill="#d4a574"/>
+        <circle cx="68" cy="68" r="4" fill="#d4a574"/>
+      </svg>
+    </div>
+    <h1 class="welcome-title">Timbre<span style="color:var(--dorado)">Ar</span></h1>
+    <p class="welcome-sub">Seleccioná el departamento al que querés llamar</p>
+    <button class="btn-primary" onclick="goToDeptos()">VER DEPARTAMENTOS</button>
+  </div>
+</div>
+
+<!-- ── PANTALLA 2: DEPARTAMENTOS ── -->
+<div class="screen" id="screen-depto">
+  <div class="dept-header">
+    <p class="dept-header-label">Timbre<span style="color:var(--dorado)">Ar</span></p>
+    <h2 class="dept-header-title" id="edificioNombre2">EDIFICIO</h2>
+    <p class="dept-header-sub">Tocá el departamento que querés llamar</p>
+  </div>
+  <div class="dept-grid-wrap" id="deptGridWrap">
+    <!-- Se genera dinámicamente -->
+  </div>
+</div>
+
+<!-- ── PANTALLA 3: LLAMANDO ── -->
+<div class="screen" id="screen-calling">
+  <div class="calling-inner">
+    <div class="calling-avatar">
+      <span id="callingLabel">2B</span>
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring-2"></div>
+    </div>
+    <div>
+      <p class="edificio-badge" style="font-family:'Bebas Neue';font-size:16px;letter-spacing:2px;">Timbre<span style="color:var(--dorado2)">Ar</span></p>
+      <p class="edificio-badge" style="margin-top:4px;">Llamando a</p>
+      <h2 class="calling-dept">DEPTO <span id="callingDept">2B</span></h2>
+    </div>
+    <p class="calling-status">Aguardá un momento
+      <span class="calling-dots"><span>.</span><span>.</span><span>.</span></span>
+    </p>
+    <button class="btn-colgar" onclick="cancelCall()" title="Colgar">📵</button>
+  </div>
+</div>
+
+<!-- ── PANTALLA 4: CHAT / VIDEO ── -->
+<div class="screen" id="screen-chat">
+  <div class="chat-header">
+    <div class="chat-avatar-sm" id="chatAvatar">2B</div>
+    <div class="chat-header-info">
+      <p class="chat-header-name">Depto <span id="chatDeptName">2B</span></p>
+      <p class="chat-header-status">Conectado</p>
+    </div>
+  </div>
+
+  <div class="video-container" id="videoContainer">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+    <div class="video-controls">
+      <button class="btn-video-ctrl" id="btnMute" onclick="toggleMute()" title="Micrófono">🎤</button>
+      <button class="btn-video-ctrl end" onclick="endCall()" title="Colgar">📵</button>
+      <button class="btn-video-ctrl" id="btnCam" onclick="toggleCamera()" title="Cámara">📷</button>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg msg-system">Conectado con Depto <span class="chat-dept-ref">2B</span></div>
+  </div>
+
+  <div class="chat-input-bar">
+    <button class="btn-audio" id="btnAudio" onclick="toggleRecording()" title="Audio">🎙️</button>
+    <input class="chat-input" id="msgInput" type="text" placeholder="Escribí un mensaje..." maxlength="200"
+      onkeydown="if(event.key==='Enter') sendMessage()" />
+    <button class="btn-send" onclick="sendMessage()" title="Enviar">➤</button>
+  </div>
+</div>
+
+<!-- ── PANTALLA 5: PUERTA ABIERTA ── -->
+<div class="screen" id="screen-open">
+  <div class="open-inner">
+    <div class="open-icon">🔓</div>
+    <h2 class="open-title">¡PUERTA<br>ABIERTA!</h2>
+    <p class="open-sub">El residente te abrió la puerta. Ya podés ingresar.</p>
+    <button class="btn-secondary" onclick="goHome()">Volver al inicio</button>
+  </div>
+</div>
+
+<!-- ── PANTALLA 6: NO DISPONIBLE ── -->
+<div class="screen" id="screen-unavailable">
+  <div class="unavail-inner">
+    <div class="unavail-icon">📵</div>
+    <h2 class="unavail-title">SIN<br>RESPUESTA</h2>
+    <p class="unavail-sub">El residente no está disponible en este momento. Intentá más tarde.</p>
+    <button class="btn-secondary" onclick="goToDeptos()">Volver a departamentos</button>
+    <button class="btn-primary" onclick="retryCall()" style="margin-top:0">Volver a llamar</button>
+  </div>
+</div>
+
+<script type="module">
+  // ═══════════════════════════════════════════════════════
+  //  FIREBASE — SDK
+  // ═══════════════════════════════════════════════════════
+  import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
+                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCvD2dC6Fw976Bi_O2OZmhKFQ7mm1uVp40",
+    authDomain:        "timbrear-cdc41.firebaseapp.com",
+    projectId:         "timbrear-cdc41",
+    storageBucket:     "timbrear-cdc41.firebasestorage.app",
+    messagingSenderId: "707107985985",
+    appId:             "1:707107985985:web:39126f161b9bb719f904c0"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Login anónimo para poder leer/escribir Firestore
+  await signInAnonymously(auth);
+
+  // ═══════════════════════════════════════════════════════
+  //  LEER EDIFICIO DESDE URL
+  //  URL esperada: index.html?edificio=EDIFICIO_ID
+  // ═══════════════════════════════════════════════════════
+  const params     = new URLSearchParams(window.location.search);
+  const edificioId = params.get('edificio') || 'demo';
+
+  let CONFIG = {
+    edificio:      { nombre: "Cargando...", direccion: "" },
+    departamentos: []
+  };
+
+  let currentDept   = null;
+  let callTimeout   = null;
+  let sesionId      = null;
+  let sesionUnsub   = null;
+  let chatUnsub     = null;
+  let mediaRecorder = null;
+  let isRecording   = false;
+  let localStream   = null;
+
+  // ═══════════════════════════════════════════════════════
+  //  CARGAR DATOS DEL EDIFICIO
+  // ═══════════════════════════════════════════════════════
+  async function cargarEdificio() {
+    try {
+      const ref  = doc(db, 'edificios', edificioId);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        // Modo DEMO si no existe el edificio
+        CONFIG = {
+          edificio: { nombre: "Edificio Demo", direccion: "Dirección de ejemplo" },
+          departamentos: [
+            { id:"1A", etiqueta:"1A", piso:"1er Piso" },
+            { id:"1B", etiqueta:"1B", piso:"1er Piso" },
+            { id:"1C", etiqueta:"1C", piso:"1er Piso" },
+            { id:"2A", etiqueta:"2A", piso:"2do Piso" },
+            { id:"2B", etiqueta:"2B", piso:"2do Piso" },
+            { id:"2C", etiqueta:"2C", piso:"2do Piso" },
+            { id:"3A", etiqueta:"3A", piso:"3er Piso" },
+            { id:"3B", etiqueta:"3B", piso:"3er Piso" },
+            { id:"3C", etiqueta:"3C", piso:"3er Piso" },
+          ]
+        };
+      } else {
+        const data = snap.data();
+        CONFIG = {
+          edificio: { nombre: data.nombre, direccion: data.direccion },
+          departamentos: (data.departamentos || []).map(d => ({
+            id:       d.id || d.etiqueta,
+            etiqueta: d.etiqueta,
+            piso:     d.piso || inferirPiso(d.etiqueta)
+          }))
+        };
+      }
+
+      document.getElementById('edificioNombre').textContent = CONFIG.edificio.nombre;
+      renderDepartamentos();
+
+    } catch(e) {
+      console.error('Error cargando edificio:', e);
+    }
+  }
+
+  function inferirPiso(etiqueta) {
+    const num = parseInt(etiqueta);
+    if (isNaN(num)) return 'Planta Baja';
+    const sufijos = ['er','do','er','to','to','to','mo','vo','no','mo'];
+    const s = sufijos[num-1] || 'mo';
+    return `${num}${s} Piso`;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  NAVEGACIÓN
+  // ═══════════════════════════════════════════════════════
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  window.goHome = () => {
+    currentDept = null;
+    cancelTimeout();
+    if (sesionUnsub) { sesionUnsub(); sesionUnsub = null; }
+    if (chatUnsub)   { chatUnsub();   chatUnsub   = null; }
+    showScreen('screen-welcome');
+  };
+
+  window.goToDeptos = () => {
+    renderDepartamentos();
+    showScreen('screen-depto');
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  RENDER DEPARTAMENTOS
+  // ═══════════════════════════════════════════════════════
+  function renderDepartamentos() {
+    const wrap = document.getElementById('deptGridWrap');
+    document.getElementById('edificioNombre').textContent  = CONFIG.edificio.nombre;
+    document.getElementById('edificioNombre2').textContent = CONFIG.edificio.nombre.toUpperCase();
+    wrap.innerHTML = '';
+
+    const pisos = {};
+    CONFIG.departamentos.forEach(d => {
+      if (!pisos[d.piso]) pisos[d.piso] = [];
+      pisos[d.piso].push(d);
+    });
+
+    Object.entries(pisos).forEach(([piso, deptos]) => {
+      const label = document.createElement('p');
+      label.className = 'dept-piso-label';
+      label.textContent = piso;
+      wrap.appendChild(label);
+
+      const grid = document.createElement('div');
+      grid.className = 'dept-grid';
+      deptos.forEach(d => {
+        const btn = document.createElement('button');
+        btn.className = 'dept-btn';
+        btn.innerHTML = `
+          <span class="dept-btn-icon">🏠</span>
+          <span class="dept-btn-num">${d.etiqueta}</span>
+          <span class="dept-btn-name">Depto</span>
+        `;
+        btn.onclick = () => startCall(d);
+        grid.appendChild(btn);
+      });
+      wrap.appendChild(grid);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  LLAMADA — crea sesión en Firestore
+  // ═══════════════════════════════════════════════════════
+  window.startCall = async (dept) => {
+    currentDept = dept;
+    document.getElementById('callingLabel').textContent = dept.etiqueta;
+    document.getElementById('callingDept').textContent  = dept.etiqueta;
+    showScreen('screen-calling');
+    startTimerBar(30);
+
+    // Timeout de 30 segundos sin respuesta
+    callTimeout = setTimeout(() => showNoResponse(), 30000);
+
+    try {
+      // Crear sesión en Firestore
+      const sesionRef = await addDoc(collection(db, 'sesiones'), {
+        edificioId:    edificioId,
+        edificioNombre: CONFIG.edificio.nombre,
+        deptoId:       dept.id,
+        deptoEtiqueta: dept.etiqueta,
+        estado:        'llamando',   // llamando | activa | rechazada | finalizada
+        creadaEn:      serverTimestamp()
+      });
+      sesionId = sesionRef.id;
+
+      // Escuchar cambios de estado de la sesión en tiempo real
+      sesionUnsub = onSnapshot(doc(db, 'sesiones', sesionId), (snap) => {
+        if (!snap.exists()) return;
+        const estado = snap.data().estado;
+        if (estado === 'activa')     onCallAccepted();
+        if (estado === 'rechazada')  onCallRejected();
+        if (estado === 'finalizada') onCallEnded();
+      });
+
+    } catch(e) {
+      console.error('Error creando sesión:', e);
+      // Fallback demo si falla Firebase
+      callTimeout = setTimeout(() => onCallAccepted(), 4000);
+    }
+  };
+
+  window.cancelCall = () => {
+    cancelTimeout();
+    stopTimerBar();
+    if (sesionId) updateDoc(doc(db, 'sesiones', sesionId), { estado: 'finalizada' }).catch(()=>{});
+    if (sesionUnsub) { sesionUnsub(); sesionUnsub = null; }
+    goToDeptos();
+  };
+
+  window.retryCall = () => {
+    if (currentDept) startCall(currentDept);
+  };
+
+  function onCallAccepted() {
+    cancelTimeout();
+    stopTimerBar();
+    const dept = currentDept;
+    document.getElementById('chatAvatar').textContent = dept.etiqueta;
+    document.getElementById('chatDeptName').textContent = dept.etiqueta;
+    document.querySelectorAll('.chat-dept-ref').forEach(el => el.textContent = dept.etiqueta);
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML = `<div class="msg msg-system">Conectado con Depto ${dept.etiqueta}</div>`;
+    showScreen('screen-chat');
+    escucharMensajes();
+  }
+
+  function onCallRejected() {
+    cancelTimeout();
+    stopTimerBar();
+    showNoResponse();
+  }
+
+  function onCallEnded() {
+    stopLocalStream();
+    goToDeptos();
+  }
+
+  function showNoResponse() {
+    if (sesionUnsub) { sesionUnsub(); sesionUnsub = null; }
+    stopTimerBar();
+    showScreen('screen-unavailable');
+  }
+
+  window.endCall = () => {
+    if (sesionId) updateDoc(doc(db, 'sesiones', sesionId), { estado: 'finalizada' }).catch(()=>{});
+    if (sesionUnsub) { sesionUnsub(); sesionUnsub = null; }
+    if (chatUnsub)   { chatUnsub();   chatUnsub   = null; }
+    stopLocalStream();
+    goToDeptos();
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  CHAT — mensajes en tiempo real via Firestore
+  // ═══════════════════════════════════════════════════════
+  window.sendMessage = async () => {
+    const input = document.getElementById('msgInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    appendMessage(text, 'visitor');
+
+    if (sesionId) {
+      try {
+        await addDoc(collection(db, 'sesiones', sesionId, 'mensajes'), {
+          texto: text,
+          de:    'visitor',
+          ts:    serverTimestamp()
+        });
+      } catch(e) { console.error('Error enviando mensaje:', e); }
+    }
+  };
+
+  function escucharMensajes() {
+    if (!sesionId) return;
+    let primero = true;
+    chatUnsub = onSnapshot(
+      collection(db, 'sesiones', sesionId, 'mensajes'),
+      (snap) => {
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const d = change.doc.data();
+            // Ignorar los mensajes propios del visitante (ya los mostramos localmente)
+            if (primero || d.de === 'resident') {
+              appendMessage(d.texto || '🎙️ Nota de audio', d.de === 'resident' ? 'resident' : 'visitor');
+            }
+          }
+        });
+        primero = false;
+      }
+    );
+  }
+
+  function appendMessage(text, from) {
+    const msgs = document.getElementById('chatMessages');
+    const div  = document.createElement('div');
+    div.className = `msg msg-${from}`;
+    const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    div.innerHTML = `${text}<div class="msg-time">${time}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  AUDIO
+  // ═══════════════════════════════════════════════════════
+  window.toggleRecording = async () => {
+    const btn = document.getElementById('btnAudio');
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const chunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          sendAudioMessage(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        btn.classList.add('recording');
+        btn.textContent = '⏹️';
+      } catch(e) { alert('No se pudo acceder al micrófono'); }
+    } else {
+      mediaRecorder.stop();
+      isRecording = false;
+      btn.classList.remove('recording');
+      btn.textContent = '🎙️';
+    }
+  };
+
+  function sendAudioMessage(blob) {
+    const msgs = document.getElementById('chatMessages');
+    const url  = URL.createObjectURL(blob);
+    const div  = document.createElement('div');
+    div.className = 'msg msg-visitor';
+    const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    div.innerHTML = `<audio controls src="${url}" style="max-width:200px;border-radius:8px;"></audio><div class="msg-time">${time}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  VIDEO / STREAM
+  // ═══════════════════════════════════════════════════════
+  window.toggleMute = () => {
+    if (!localStream) return;
+    const btn   = document.getElementById('btnMute');
+    const track = localStream.getAudioTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      btn.textContent = track.enabled ? '🎤' : '🔇';
+      btn.classList.toggle('active', !track.enabled);
+    }
+  };
+
+  window.toggleCamera = () => {
+    if (!localStream) return;
+    const btn   = document.getElementById('btnCam');
+    const track = localStream.getVideoTracks()[0];
+    if (track) {
+      track.enabled = !track.enabled;
+      btn.textContent = track.enabled ? '📷' : '🚫';
+      btn.classList.toggle('active', !track.enabled);
+    }
+  };
+
+  function stopLocalStream() {
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  TIMER BAR
+  // ═══════════════════════════════════════════════════════
+  function startTimerBar(seconds) {
+    const wrap = document.getElementById('timerBarWrap');
+    const bar  = document.getElementById('timerBar');
+    wrap.classList.add('visible');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    requestAnimationFrame(() => {
+      bar.style.transition = `width ${seconds}s linear`;
+      bar.style.width = '0%';
+    });
+  }
+
+  function stopTimerBar() {
+    document.getElementById('timerBarWrap').classList.remove('visible');
+  }
+
+  function cancelTimeout() {
+    if (callTimeout) { clearTimeout(callTimeout); callTimeout = null; }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════════
+  cargarEdificio();
+</script>
+
+</body>
+</html>

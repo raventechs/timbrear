@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimbreAr — Consola Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --negro:   #0d0d0d;
+      --grafito: #1a1a1a;
+      --panel:   #222222;
+      --panel2:  #2a2a2a;
+      --borde:   #333333;
+      --plata:   #888888;
+      --blanco:  #f0f0f0;
+      --dorado:  #c8a84b;
+      --dorado2: #e8c96a;
+      --verde:   #27ae60;
+      --rojo:    #c0392b;
+      --azul:    #2471a3;
+      --naranja: #d35400;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--negro);
+      color: var(--blanco);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+    }
+
+    /* ── LAYOUT ── */
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 240px;
+      background: var(--grafito);
+      border-right: 1px solid var(--borde);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--borde);
+    }
+    .logo-mark {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    .logo-mark span { color: var(--dorado); }
+    .logo-sub {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--plata);
+      margin-top: 4px;
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 0;
+      overflow-y: auto;
+    }
+    .nav-section-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--plata);
+      padding: 12px 20px 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 20px;
+      cursor: pointer;
+      color: var(--plata);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background .15s, color .15s;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { background: var(--panel); color: var(--blanco); }
+    .nav-item.active {
+      background: var(--panel);
+      color: var(--dorado);
+      border-left-color: var(--dorado);
+    }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--borde);
+      font-size: 11px;
+      color: var(--plata);
+    }
+    .sidebar-footer strong { color: var(--dorado); font-size: 12px; }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: var(--grafito);
+      border-bottom: 1px solid var(--borde);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--blanco);
+    }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .badge-admin {
+      background: rgba(200,168,75,.15);
+      border: 1px solid rgba(200,168,75,.3);
+      color: var(--dorado);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    .content { padding: 32px; flex: 1; }
+
+    /* ── VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--plata);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 2px;
+      line-height: 1;
+      color: var(--blanco);
+    }
+    .stat-value.dorado { color: var(--dorado); }
+    .stat-value.verde { color: var(--verde); }
+    .stat-sub {
+      font-size: 11px;
+      color: var(--plata);
+      margin-top: 4px;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--blanco);
+    }
+    .section-sub {
+      font-size: 12px;
+      color: var(--plata);
+      margin-top: 2px;
+    }
+
+    /* ── BOTONES ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity .15s, transform .12s;
+      text-transform: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--dorado), var(--dorado2));
+      color: var(--negro);
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--borde);
+      color: var(--blanco);
+    }
+    .btn-outline:hover { border-color: var(--dorado); color: var(--dorado); }
+    .btn-danger {
+      background: rgba(192,57,43,.15);
+      border: 1px solid rgba(192,57,43,.3);
+      color: var(--rojo);
+    }
+    .btn-danger:hover { background: rgba(192,57,43,.25); }
+    .btn-green {
+      background: rgba(39,174,96,.15);
+      border: 1px solid rgba(39,174,96,.3);
+      color: var(--verde);
+    }
+    .btn-green:hover { background: rgba(39,174,96,.25); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ── TABLA EDIFICIOS ── */
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--panel2); }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--plata);
+      font-weight: 600;
+      border-bottom: 1px solid var(--borde);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      font-size: 13px;
+      color: var(--blanco);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pill-verde { background: rgba(39,174,96,.15); color: var(--verde); border: 1px solid rgba(39,174,96,.3); }
+    .pill-rojo { background: rgba(192,57,43,.15); color: var(--rojo); border: 1px solid rgba(192,57,43,.3); }
+    .pill-dorado { background: rgba(200,168,75,.15); color: var(--dorado); border: 1px solid rgba(200,168,75,.3); }
+    .pill::before { content: '●'; font-size: 7px; }
+
+    /* ── FORMULARIO EDIFICIO ── */
+    .form-card {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .form-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blanco);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--plata);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .field input, .field select, .field textarea {
+      background: var(--panel2);
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--blanco);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--dorado);
+    }
+    .field input::placeholder, .field textarea::placeholder { color: #555; }
+    .field select option { background: var(--grafito); }
+
+    /* ── DEPARTAMENTOS EDITOR ── */
+    .deptos-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .deptos-list { display: flex; flex-direction: column; gap: 8px; }
+    .depto-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 160px 160px auto;
+      gap: 10px;
+      align-items: center;
+      background: var(--panel2);
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: border-color .2s;
+    }
+    .depto-row:hover { border-color: #444; }
+    .depto-row input {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--blanco);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 100%;
+      transition: border-color .2s;
+    }
+    .depto-row input:focus { border-color: var(--dorado); }
+    .depto-etiqueta {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: var(--dorado);
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .depto-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-verde { background: var(--verde); }
+    .dot-gris { background: var(--plata); }
+    .dot-naranja { background: var(--naranja); }
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--plata);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color .15s, background .15s;
+      display: flex;
+      align-items: center;
+    }
+    .btn-delete:hover { color: var(--rojo); background: rgba(192,57,43,.1); }
+
+    /* ── WHATSAPP ENVÍO ── */
+    .wa-panel {
+      background: linear-gradient(135deg, rgba(37,211,102,.06), rgba(37,211,102,.02));
+      border: 1px solid rgba(37,211,102,.2);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .wa-info { display: flex; align-items: center; gap: 14px; }
+    .wa-icon { font-size: 32px; }
+    .wa-title { font-size: 14px; font-weight: 600; color: var(--blanco); }
+    .wa-sub { font-size: 12px; color: var(--plata); margin-top: 2px; }
+    .wa-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      padding: 20px;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--grafito);
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 28px;
+      transform: translateY(12px);
+      transition: transform .2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--blanco);
+      margin-bottom: 6px;
+    }
+    .modal-sub {
+      font-size: 13px;
+      color: var(--plata);
+      margin-bottom: 24px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--borde);
+    }
+
+    /* ── GENERADOR QR ── */
+    .qr-card {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .qr-placeholder {
+      width: 120px;
+      height: 120px;
+      border: 2px dashed var(--borde);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      flex-shrink: 0;
+      background: var(--panel2);
+    }
+    .qr-info { flex: 1; }
+    .qr-url {
+      font-size: 12px;
+      color: var(--dorado);
+      background: var(--panel2);
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: monospace;
+      margin: 10px 0;
+      word-break: break-all;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      z-index: 300;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: transform .3s, opacity .3s;
+      max-width: 320px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(39,174,96,.4); }
+    .toast.error { border-color: rgba(192,57,43,.4); }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--plata);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--blanco); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; line-height: 1.6; }
+
+    /* ── ACTIVACIÓN STATUS ── */
+    .activation-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .depto-row { grid-template-columns: 60px 1fr 1fr; }
+      .depto-row .depto-phone, .depto-row .depto-name-col { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">Timbre<span>Ar</span></div>
+      <div class="logo-sub">Consola de administración</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" onclick="showView('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showView('edificios')">
+        <span class="icon">🏢</span> Edificios
+      </div>
+
+      <div class="nav-section-label" style="margin-top:8px">Configuración</div>
+      <div class="nav-item" onclick="showView('nuevo-edificio')">
+        <span class="icon">➕</span> Nuevo edificio
+      </div>
+      <div class="nav-item" onclick="showView('activaciones')">
+        <span class="icon">📱</span> Activaciones
+      </div>
+      <div class="nav-item" onclick="showView('qr')">
+        <span class="icon">⬛</span> Códigos QR
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>TimbreAr</strong><br>
+      v1.0 · Panel interno
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbarTitle">Dashboard</span>
+      <div class="topbar-right">
+        <span class="badge-admin">Admin</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ DASHBOARD ══ -->
+      <div class="view active" id="view-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Edificios activos</div>
+            <div class="stat-value dorado" id="stat-edificios">0</div>
+            <div class="stat-sub">en producción</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Departamentos</div>
+            <div class="stat-value" id="stat-deptos">0</div>
+            <div class="stat-sub">configurados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Residentes activos</div>
+            <div class="stat-value verde" id="stat-activos">0</div>
+            <div class="stat-sub">link activado</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value" id="stat-pendientes" style="color:var(--naranja)">0</div>
+            <div class="stat-sub">sin activar</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div>
+            <div class="section-title">Edificios recientes</div>
+            <div class="section-sub">Últimos edificios cargados</div>
+          </div>
+          <button class="btn btn-gold" onclick="showView('nuevo-edificio')">+ Nuevo edificio</button>
+        </div>
+
+        <div class="table-wrap" id="dashboard-table">
+          <div class="empty">
+            <div class="empty-icon">🏢</div>
+            <div class="empty-title">No hay edificios cargados</div>
+            <div class="empty-sub">Creá el primer edificio para empezar</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ LISTA EDIFICIOS ══ -->
+      <div class="view" id="view-edificios">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Todos los edificios</div>
+            <div class="section-sub">Administrá cada consorcio cliente</div>
+          </div>
+          <button class="btn btn-gold" onclick="showView('nuevo-edificio')">+ Nuevo edificio</button>
+        </div>
+        <div class="table-wrap" id="edificios-table">
+          <div class="empty">
+            <div class="empty-icon">🏢</div>
+            <div class="empty-title">Sin edificios</div>
+            <div class="empty-sub">Usá "Nuevo edificio" para cargar el primero</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ NUEVO / EDITAR EDIFICIO ══ -->
+      <div class="view" id="view-nuevo-edificio">
+        <div class="section-header">
+          <div>
+            <div class="section-title" id="formTitle">Nuevo edificio</div>
+            <div class="section-sub">Completá los datos del consorcio y sus departamentos</div>
+          </div>
+        </div>
+
+        <!-- Datos del edificio -->
+        <div class="form-card">
+          <div class="form-card-title">🏢 Datos del edificio</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Nombre del edificio</label>
+              <input type="text" id="f-nombre" placeholder="Ej: Edificio San Martín" />
+            </div>
+            <div class="field">
+              <label>Dirección</label>
+              <input type="text" id="f-dir" placeholder="Av. San Martín 1234, CABA" />
+            </div>
+          </div>
+          <div class="form-row three">
+            <div class="field">
+              <label>Ciudad / Localidad</label>
+              <input type="text" id="f-ciudad" placeholder="Buenos Aires" />
+            </div>
+            <div class="field">
+              <label>Plan contratado</label>
+              <select id="f-plan">
+                <option value="basico">Básico (hasta 20 deptos)</option>
+                <option value="standard">Standard (hasta 50 deptos)</option>
+                <option value="premium">Premium (ilimitado)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Estado</label>
+              <select id="f-estado">
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+                <option value="prueba">Período de prueba</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Departamentos -->
+        <div class="form-card">
+          <div class="form-card-title">🏠 Departamentos</div>
+
+          <div class="deptos-toolbar">
+            <button class="btn btn-outline btn-sm" onclick="addDepto()">+ Agregar depto</button>
+            <button class="btn btn-outline btn-sm" onclick="addPiso()">+ Agregar piso completo</button>
+            <button class="btn btn-outline btn-sm" onclick="importarCSV()">📋 Importar desde lista</button>
+          </div>
+
+          <!-- Encabezado columnas -->
+          <div style="display:grid;grid-template-columns:80px 1fr 160px 160px auto;gap:10px;padding:0 14px 8px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--plata);font-weight:600;">
+            <span>DEPTO</span>
+            <span>NOMBRE RESIDENTE</span>
+            <span>WHATSAPP</span>
+            <span>ESTADO</span>
+            <span></span>
+          </div>
+
+          <div class="deptos-list" id="deptosList">
+            <!-- filas dinámicas -->
+          </div>
+
+          <div class="empty" id="deptosEmpty" style="display:none">
+            <div class="empty-icon">🚪</div>
+            <div class="empty-title">Sin departamentos</div>
+            <div class="empty-sub">Agregá los departamentos del edificio</div>
+          </div>
+        </div>
+
+        <!-- Envío WhatsApp -->
+        <div class="wa-panel" id="waPanel" style="display:none; margin-bottom:24px;">
+          <div class="wa-info">
+            <div class="wa-icon">💬</div>
+            <div>
+              <div class="wa-title">Enviar links de activación</div>
+              <div class="wa-sub">Se enviará un WhatsApp a cada residente con su link personal para activar el timbre</div>
+            </div>
+          </div>
+          <div class="wa-actions">
+            <button class="btn btn-outline btn-sm" onclick="previewWA()">Ver mensaje</button>
+            <button class="btn btn-green btn-sm" onclick="enviarTodos()">Enviar a todos</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="cancelarForm()">Cancelar</button>
+          <button class="btn btn-gold" onclick="guardarEdificio()">💾 Guardar edificio</button>
+        </div>
+      </div>
+
+      <!-- ══ ACTIVACIONES ══ -->
+      <div class="view" id="view-activaciones">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Estado de activaciones</div>
+            <div class="section-sub">Residentes que activaron su timbre virtual</div>
+          </div>
+          <button class="btn btn-outline" onclick="reenviarPendientes()">🔁 Reenviar pendientes</button>
+        </div>
+        <div class="table-wrap" id="activaciones-table">
+          <div class="empty">
+            <div class="empty-icon">📱</div>
+            <div class="empty-title">Sin datos de activación</div>
+            <div class="empty-sub">Guardá un edificio con departamentos para ver el estado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ QR ══ -->
+      <div class="view" id="view-qr">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Códigos QR</div>
+            <div class="section-sub">Generá el QR para imprimir en cada edificio</div>
+          </div>
+        </div>
+        <div id="qr-list">
+          <div class="empty">
+            <div class="empty-icon">⬛</div>
+            <div class="empty-title">Sin edificios</div>
+            <div class="empty-sub">Creá un edificio para generar su QR</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- ══ MODAL IMPORTAR ══ -->
+<div class="modal-overlay" id="modalImport">
+  <div class="modal">
+    <div class="modal-title">Importar departamentos</div>
+    <div class="modal-sub">Pegá la lista en formato: <strong style="color:var(--dorado)">DEPTO, NOMBRE, TELÉFONO</strong> — uno por línea</div>
+    <div class="field">
+      <textarea id="importText" rows="10" placeholder="1A, Juan Pérez, 1112345678&#10;1B, María García, 1187654321&#10;2A, Carlos López, 1155443322&#10;2B, Ana Martínez, 1166778899"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalImport')">Cancelar</button>
+      <button class="btn btn-gold" onclick="procesarImport()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL PREVIEW WA ══ -->
+<div class="modal-overlay" id="modalWA">
+  <div class="modal">
+    <div class="modal-title">💬 Mensaje de activación</div>
+    <div class="modal-sub">Este es el mensaje que recibirá cada residente por WhatsApp</div>
+    <div style="background:var(--panel2);border:1px solid var(--borde);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;color:var(--blanco);white-space:pre-wrap;" id="waPreviewText"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalWA')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL PISO COMPLETO ══ -->
+<div class="modal-overlay" id="modalPiso">
+  <div class="modal">
+    <div class="modal-title">Agregar piso completo</div>
+    <div class="modal-sub">Se crearán todos los departamentos del piso automáticamente</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Número de piso</label>
+        <input type="number" id="pisoNum" placeholder="Ej: 3" min="1" max="50" />
+      </div>
+      <div class="field">
+        <label>Letras de departamentos</label>
+        <input type="text" id="pisoLetras" placeholder="A B C D" value="A B C D" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalPiso')">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmarPiso()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-msg">Guardado</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════
+let edificios = JSON.parse(localStorage.getItem('timbrear_edificios') || '[]');
+let editandoId = null;
+let deptos = []; // deptos del form actual
+
+// ═══════════════════════════════════════════════════════
+//  NAVEGACIÓN
+// ═══════════════════════════════════════════════════════
+const viewTitles = {
+  'dashboard': 'Dashboard',
+  'edificios': 'Edificios',
+  'nuevo-edificio': 'Nuevo edificio',
+  'activaciones': 'Activaciones',
+  'qr': 'Códigos QR'
+};
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(viewTitles[id]?.toLowerCase().split(' ')[0])) {
+      n.classList.add('active');
+    }
+  });
+  document.getElementById('topbarTitle').textContent = viewTitles[id] || id;
+
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'edificios') renderEdificiosTable();
+  if (id === 'activaciones') renderActivaciones();
+  if (id === 'qr') renderQR();
+  if (id === 'nuevo-edificio' && !editandoId) resetForm();
+}
+
+// ═══════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════
+function renderDashboard() {
+  const totalDeptos = edificios.reduce((s, e) => s + (e.departamentos?.length || 0), 0);
+  const activos = edificios.reduce((s, e) => s + (e.departamentos?.filter(d => d.activado).length || 0), 0);
+  const pendientes = totalDeptos - activos;
+
+  document.getElementById('stat-edificios').textContent = edificios.filter(e => e.estado === 'activo').length;
+  document.getElementById('stat-deptos').textContent = totalDeptos;
+  document.getElementById('stat-activos').textContent = activos;
+  document.getElementById('stat-pendientes').textContent = pendientes;
+
+  const tbl = document.getElementById('dashboard-table');
+  if (!edificios.length) {
+    tbl.innerHTML = `<div class="empty"><div class="empty-icon">🏢</div><div class="empty-title">No hay edificios cargados</div><div class="empty-sub">Creá el primer edificio para empezar</div></div>`;
+    return;
+  }
+  tbl.innerHTML = buildEdificiosTableHTML(edificios.slice(-5).reverse());
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABLA EDIFICIOS
+// ═══════════════════════════════════════════════════════
+function buildEdificiosTableHTML(list) {
+  if (!list.length) return `<div class="empty"><div class="empty-icon">🏢</div><div class="empty-title">Sin edificios</div></div>`;
+  return `<table>
+    <thead><tr>
+      <th>Edificio</th><th>Dirección</th><th>Deptos</th><th>Activados</th><th>Plan</th><th>Estado</th><th>Acciones</th>
+    </tr></thead>
+    <tbody>
+      ${list.map(e => {
+        const total = e.departamentos?.length || 0;
+        const act = e.departamentos?.filter(d => d.activado).length || 0;
+        const estadoPill = e.estado === 'activo'
+          ? '<span class="pill pill-verde">Activo</span>'
+          : e.estado === 'prueba'
+          ? '<span class="pill pill-dorado">Prueba</span>'
+          : '<span class="pill pill-rojo">Inactivo</span>';
+        return `<tr>
+          <td><strong>${e.nombre}</strong></td>
+          <td style="color:var(--plata)">${e.direccion}</td>
+          <td>${total}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="flex:1;height:4px;background:var(--borde);border-radius:4px;min-width:60px;">
+                <div style="height:4px;background:var(--verde);border-radius:4px;width:${total ? Math.round(act/total*100) : 0}%"></div>
+              </div>
+              <span style="font-size:11px;color:var(--plata)">${act}/${total}</span>
+            </div>
+          </td>
+          <td><span style="color:var(--plata);font-size:12px;text-transform:capitalize">${e.plan}</span></td>
+          <td>${estadoPill}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="editarEdificio('${e.id}')">✏️ Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="eliminarEdificio('${e.id}')">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderEdificiosTable() {
+  document.getElementById('edificios-table').innerHTML = buildEdificiosTableHTML(edificios);
+}
+
+// ═══════════════════════════════════════════════════════
+//  FORM DEPARTAMENTOS
+// ═══════════════════════════════════════════════════════
+function resetForm() {
+  editandoId = null;
+  deptos = [];
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-dir').value = '';
+  document.getElementById('f-ciudad').value = '';
+  document.getElementById('f-plan').value = 'basico';
+  document.getElementById('f-estado').value = 'activo';
+  document.getElementById('formTitle').textContent = 'Nuevo edificio';
+  renderDeptos();
+}
+
+function renderDeptos() {
+  const list = document.getElementById('deptosList');
+  const empty = document.getElementById('deptosEmpty');
+  const waPanel = document.getElementById('waPanel');
+
+  if (!deptos.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    waPanel.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  waPanel.style.display = 'flex';
+
+  list.innerHTML = deptos.map((d, i) => {
+    const statusHTML = d.activado
+      ? `<div class="depto-status"><div class="dot dot-verde"></div><span style="color:var(--verde)">Activado</span></div>`
+      : d.enviado
+      ? `<div class="depto-status"><div class="dot dot-naranja"></div><span style="color:var(--naranja)">Enviado</span></div>`
+      : `<div class="depto-status"><div class="dot dot-gris"></div><span style="color:var(--plata)">Pendiente</span></div>`;
+
+    return `<div class="depto-row">
+      <div class="depto-etiqueta">${d.etiqueta || '—'}</div>
+      <input type="text" placeholder="Nombre del residente" value="${d.nombre || ''}"
+        oninput="deptos[${i}].nombre = this.value" class="depto-name-col" />
+      <input type="tel" placeholder="+54 9 11 ..." value="${d.telefono || ''}"
+        oninput="deptos[${i}].telefono = this.value; actualizarEtiqueta(${i})" class="depto-phone" />
+      ${statusHTML}
+      <button class="btn-delete" onclick="removeDepto(${i})" title="Eliminar">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function actualizarEtiqueta(i) {
+  // actualiza el input de la etiqueta si se necesita
+}
+
+function addDepto() {
+  const etiqueta = prompt('Etiqueta del departamento (ej: 7A, PB, 3B):');
+  if (!etiqueta) return;
+  deptos.push({ etiqueta: etiqueta.toUpperCase(), nombre: '', telefono: '', activado: false, enviado: false, id: Date.now() + Math.random() });
+  renderDeptos();
+}
+
+function addPiso() {
+  openModal('modalPiso');
+}
+
+function confirmarPiso() {
+  const num = document.getElementById('pisoNum').value.trim();
+  const letras = document.getElementById('pisoLetras').value.trim().toUpperCase().split(/\s+/);
+  if (!num || !letras.length) return;
+  letras.forEach(l => {
+    deptos.push({ etiqueta: `${num}${l}`, nombre: '', telefono: '', activado: false, enviado: false, id: Date.now() + Math.random() });
+  });
+  closeModal('modalPiso');
+  renderDeptos();
+}
+
+function removeDepto(i) {
+  deptos.splice(i, 1);
+  renderDeptos();
+}
+
+function importarCSV() {
+  openModal('modalImport');
+}
+
+function procesarImport() {
+  const text = document.getElementById('importText').value.trim();
+  const lines = text.split('\n').filter(l => l.trim());
+  lines.forEach(line => {
+    const parts = line.split(',').map(p => p.trim());
+    if (parts[0]) {
+      deptos.push({
+        etiqueta: parts[0].toUpperCase(),
+        nombre: parts[1] || '',
+        telefono: parts[2] || '',
+        activado: false,
+        enviado: false,
+        id: Date.now() + Math.random()
+      });
+    }
+  });
+  closeModal('modalImport');
+  renderDeptos();
+  showToast(`✅ ${lines.length} departamentos importados`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  GUARDAR EDIFICIO
+// ═══════════════════════════════════════════════════════
+function guardarEdificio() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const direccion = document.getElementById('f-dir').value.trim();
+  if (!nombre) { showToast('⚠️ El nombre del edificio es obligatorio', 'error'); return; }
+
+  // Leer deptos actuales desde inputs del DOM
+  const rows = document.querySelectorAll('.depto-row');
+  rows.forEach((row, i) => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0]) deptos[i].nombre = inputs[0].value;
+    if (inputs[1]) deptos[i].telefono = inputs[1].value;
+  });
+
+  const edificio = {
+    id: editandoId || ('ed_' + Date.now()),
+    nombre,
+    direccion,
+    ciudad: document.getElementById('f-ciudad').value.trim(),
+    plan: document.getElementById('f-plan').value,
+    estado: document.getElementById('f-estado').value,
+    departamentos: deptos.map(d => ({ ...d })),
+    creadoEn: editandoId ? (edificios.find(e => e.id === editandoId)?.creadoEn || Date.now()) : Date.now()
+  };
+
+  if (editandoId) {
+    const idx = edificios.findIndex(e => e.id === editandoId);
+    edificios[idx] = edificio;
+    showToast('✅ Edificio actualizado');
+  } else {
+    edificios.push(edificio);
+    showToast('✅ Edificio guardado');
+  }
+
+  localStorage.setItem('timbrear_edificios', JSON.stringify(edificios));
+  editandoId = null;
+  showView('edificios');
+}
+
+function cancelarForm() {
+  editandoId = null;
+  showView('edificios');
+}
+
+function editarEdificio(id) {
+  const e = edificios.find(ed => ed.id === id);
+  if (!e) return;
+  editandoId = id;
+  deptos = (e.departamentos || []).map(d => ({ ...d }));
+  document.getElementById('f-nombre').value = e.nombre;
+  document.getElementById('f-dir').value = e.direccion;
+  document.getElementById('f-ciudad').value = e.ciudad || '';
+  document.getElementById('f-plan').value = e.plan;
+  document.getElementById('f-estado').value = e.estado;
+  document.getElementById('formTitle').textContent = `Editando: ${e.nombre}`;
+  showView('nuevo-edificio');
+  renderDeptos();
+}
+
+function eliminarEdificio(id) {
+  if (!confirm('¿Eliminar este edificio? Esta acción no se puede deshacer.')) return;
+  edificios = edificios.filter(e => e.id !== id);
+  localStorage.setItem('timbrear_edificios', JSON.stringify(edificios));
+  renderEdificiosTable();
+  showToast('🗑️ Edificio eliminado');
+}
+
+// ═══════════════════════════════════════════════════════
+//  WHATSAPP
+// ═══════════════════════════════════════════════════════
+function previewWA() {
+  const nombre = document.getElementById('f-nombre').value || 'tu edificio';
+  document.getElementById('waPreviewText').textContent =
+`Hola [nombre del residente] 👋
+
+Te damos la bienvenida a *TimbreAr*, el portero virtual de *${nombre}*.
+
+A partir de ahora vas a recibir en este número las llamadas del portero de tu edificio.
+
+👉 Tocá este link para activar tu timbre virtual:
+https://timbrear.app/activar/[código-único]
+
+Una vez que lo abrás, quedás listo para recibir visitas directamente en tu celular.
+
+_TimbreAr — Portero virtual inteligente_`;
+  openModal('modalWA');
+}
+
+function enviarTodos() {
+  const rows = document.querySelectorAll('.depto-row');
+  rows.forEach((row, i) => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[1]) deptos[i].telefono = inputs[1].value;
+  });
+
+  const nombre = document.getElementById('f-nombre').value || 'el edificio';
+  let enviados = 0;
+  deptos.forEach(d => {
+    if (d.telefono && !d.activado) {
+      const tel = d.telefono.replace(/\D/g, '');
+      const msg = encodeURIComponent(
+        `Hola ${d.nombre || 'vecino/a'} 👋\n\nTe damos la bienvenida a *TimbreAr*, el portero virtual de *${nombre}*.\n\nActivá tu timbre virtual:\nhttps://timbrear.app/activar/${d.id}\n\n_TimbreAr — Portero virtual inteligente_`
+      );
+      // En producción: API de WhatsApp Business
+      // En demo: abre WhatsApp Web por cada número
+      window.open(`https://wa.me/54${tel}?text=${msg}`, '_blank');
+      d.enviado = true;
+      enviados++;
+    }
+  });
+  renderDeptos();
+  showToast(`💬 ${enviados} mensajes enviados por WhatsApp`);
+}
+
+// ═══════════════════════════════════════════════════════
+//  ACTIVACIONES
+// ═══════════════════════════════════════════════════════
+function renderActivaciones() {
+  const tbl = document.getElementById('activaciones-table');
+  const todos = [];
+  edificios.forEach(e => {
+    (e.departamentos || []).forEach(d => {
+      todos.push({ ...d, edificio: e.nombre });
+    });
+  });
+
+  if (!todos.length) {
+    tbl.innerHTML = `<div class="empty"><div class="empty-icon">📱</div><div class="empty-title">Sin datos</div></div>`;
+    return;
+  }
+
+  tbl.innerHTML = `<table>
+    <thead><tr><th>Depto</th><th>Residente</th><th>Teléfono</th><th>Edificio</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody>
+      ${todos.map(d => {
+        const statusHTML = d.activado
+          ? '<span class="pill pill-verde">Activado</span>'
+          : d.enviado
+          ? '<span class="pill pill-dorado">Enviado</span>'
+          : '<span class="pill pill-rojo">Pendiente</span>';
+        const accion = !d.activado && d.telefono
+          ? `<button class="btn btn-outline btn-sm" onclick="reenviarUno('${d.id}')">🔁 Reenviar</button>`
+          : '—';
+        return `<tr>
+          <td><strong style="color:var(--dorado);font-family:'Bebas Neue';font-size:18px">${d.etiqueta}</strong></td>
+          <td>${d.nombre || '<span style="color:var(--plata)">Sin nombre</span>'}</td>
+          <td style="color:var(--plata);font-family:monospace">${d.telefono || '—'}</td>
+          <td>${d.edificio}</td>
+          <td>${statusHTML}</td>
+          <td>${accion}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function reenviarPendientes() {
+  showToast('🔁 Reenviando a pendientes...');
+}
+
+function reenviarUno(id) {
+  showToast('💬 Mensaje reenviado');
+}
+
+// ═══════════════════════════════════════════════════════
+//  QR
+// ═══════════════════════════════════════════════════════
+function renderQR() {
+  const wrap = document.getElementById('qr-list');
+  if (!edificios.length) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">⬛</div><div class="empty-title">Sin edificios</div><div class="empty-sub">Creá un edificio para generar su QR</div></div>`;
+    return;
+  }
+  wrap.innerHTML = edificios.map(e => {
+    const url = `https://timbrear.app/portero/${e.id}`;
+    return `<div class="qr-card" style="margin-bottom:16px;">
+      <div class="qr-placeholder">⬛</div>
+      <div class="qr-info">
+        <div style="font-weight:600;font-size:15px">${e.nombre}</div>
+        <div style="color:var(--plata);font-size:12px;margin-top:2px">${e.direccion}</div>
+        <div class="qr-url">${url}</div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-gold btn-sm" onclick="generarQR('${e.id}', '${url}')">⬛ Generar QR</button>
+          <button class="btn btn-outline btn-sm" onclick="copiarURL('${url}')">📋 Copiar URL</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function generarQR(id, url) {
+  // En producción: librería qrcode.js — por ahora redirige a generador online
+  window.open(`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`, '_blank');
+  showToast('⬛ QR generado y abierto para descargar');
+}
+
+function copiarURL(url) {
+  navigator.clipboard.writeText(url).then(() => showToast('📋 URL copiada'));
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODALES
+// ═══════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+renderDashboard();
+</script>
+</body>
+</html>

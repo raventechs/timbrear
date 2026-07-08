@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimbreAr — Cargador inicial</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d0d;
+      color: #f0f0f0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 20px;
+      padding: 36px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+    .brand span { color: #c8a84b; }
+    .subtitle {
+      font-size: 12px;
+      color: #888;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    p { font-size: 13px; color: #888; line-height: 1.6; margin-bottom: 20px; }
+    .log-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      min-height: 120px;
+      max-height: 280px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      color: #888;
+    }
+    .log-box .ok   { color: #27ae60; }
+    .log-box .err  { color: #c0392b; }
+    .log-box .info { color: #c8a84b; }
+    .btn {
+      background: linear-gradient(135deg, #c8a84b, #e8c96a);
+      color: #0d0d0d;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: opacity .2s;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .divider {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 24px 0;
+    }
+    .url-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #c8a84b;
+      word-break: break-all;
+      display: none;
+      margin-top: 12px;
+      line-height: 1.7;
+    }
+    .url-box strong { color: #f0f0f0; display: block; margin-bottom: 4px; font-size: 12px; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">Timbre<span>Ar</span></div>
+  <div class="subtitle">Cargador de datos iniciales</div>
+
+  <h2>Edificio de prueba</h2>
+  <p>
+    Este archivo carga un edificio de demo con 9 departamentos en tu Firestore.
+    Abrilo desde Netlify (no en local) y tocá el botón. Solo necesitás hacerlo una vez.
+  </p>
+
+  <div class="log-box" id="log">
+    <span class="info">► Listo para cargar. Tocá el botón para empezar.</span>
+  </div>
+
+  <button class="btn" id="btnCargar" onclick="cargar()">
+    🚀 Cargar edificio de prueba en Firebase
+  </button>
+
+  <div class="divider"></div>
+
+  <div id="urlsResult"></div>
+</div>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, collection, serverTimestamp }
+                             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCvD2dC6Fw976Bi_O2OZmhKFQ7mm1uVp40",
+    authDomain:        "timbrear-cdc41.firebaseapp.com",
+    projectId:         "timbrear-cdc41",
+    storageBucket:     "timbrear-cdc41.firebasestorage.app",
+    messagingSenderId: "707107985985",
+    appId:             "1:707107985985:web:39126f161b9bb719f904c0"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+  await signInAnonymously(auth);
+
+  // ══════════════════════════════════════════
+  //  DATOS DEL EDIFICIO DE PRUEBA
+  // ══════════════════════════════════════════
+  const EDIFICIO_ID = "demo";
+
+  const EDIFICIO = {
+    nombre:    "Edificio Demo",
+    direccion: "Av. Corrientes 1234, CABA",
+    ciudad:    "Buenos Aires",
+    plan:      "basico",
+    estado:    "activo",
+    creadoEn:  serverTimestamp()
+  };
+
+  const DEPARTAMENTOS = [
+    { id: "1A", etiqueta: "1A", piso: "1er Piso", nombre: "Residente 1A", telefono: "", activado: false },
+    { id: "1B", etiqueta: "1B", piso: "1er Piso", nombre: "Residente 1B", telefono: "", activado: false },
+    { id: "1C", etiqueta: "1C", piso: "1er Piso", nombre: "Residente 1C", telefono: "", activado: false },
+    { id: "2A", etiqueta: "2A", piso: "2do Piso", nombre: "Residente 2A", telefono: "", activado: false },
+    { id: "2B", etiqueta: "2B", piso: "2do Piso", nombre: "Residente 2B", telefono: "", activado: false },
+    { id: "2C", etiqueta: "2C", piso: "2do Piso", nombre: "Residente 2C", telefono: "", activado: false },
+    { id: "3A", etiqueta: "3A", piso: "3er Piso", nombre: "Residente 3A", telefono: "", activado: false },
+    { id: "3B", etiqueta: "3B", piso: "3er Piso", nombre: "Residente 3B", telefono: "", activado: false },
+    { id: "3C", etiqueta: "3C", piso: "3er Piso", nombre: "Residente 3C", telefono: "", activado: false },
+  ];
+
+  // ══════════════════════════════════════════
+  //  FUNCIÓN PRINCIPAL
+  // ══════════════════════════════════════════
+  window.cargar = async () => {
+    const btn = document.getElementById('btnCargar');
+    btn.disabled = true;
+    btn.textContent = "Cargando...";
+    limpiarLog();
+
+    try {
+      // 1 — Crear el documento del edificio
+      log("info", "► Creando edificio...");
+      await setDoc(doc(db, "edificios", EDIFICIO_ID), EDIFICIO);
+      log("ok", "✅ Edificio creado: " + EDIFICIO_ID);
+
+      // 2 — Crear cada departamento como subcolección
+      log("info", "► Cargando departamentos...");
+      for (const depto of DEPARTAMENTOS) {
+        await setDoc(
+          doc(db, "edificios", EDIFICIO_ID, "departamentos", depto.id),
+          {
+            etiqueta:  depto.etiqueta,
+            piso:      depto.piso,
+            nombre:    depto.nombre,
+            telefono:  depto.telefono,
+            activado:  depto.activado,
+            fcmToken:  null,
+            creadoEn:  serverTimestamp()
+          }
+        );
+        log("ok", `  ✅ Depto ${depto.etiqueta} — ${depto.piso}`);
+      }
+
+      log("ok", "");
+      log("ok", "🎉 ¡Todo listo! Edificio demo cargado en Firebase.");
+      log("info", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // 3 — Mostrar URLs de prueba
+      mostrarURLs();
+
+      btn.textContent = "✅ Cargado exitosamente";
+
+    } catch(e) {
+      log("err", "❌ Error: " + e.message);
+      log("err", "Asegurate de estar en Netlify (no en local) y de haber publicado las reglas de Firestore.");
+      btn.disabled = false;
+      btn.textContent = "🚀 Cargar edificio de prueba";
+    }
+  };
+
+  // ══════════════════════════════════════════
+  //  MOSTRAR URLs DE PRUEBA
+  // ══════════════════════════════════════════
+  function mostrarURLs() {
+    const base    = window.location.origin;
+    const result  = document.getElementById('urlsResult');
+
+    const visitante  = `${base}/portero-virtual.html?edificio=demo`;
+    const residente  = `${base}/timbrear-residente.html?edificio=demo&depto=2B&deptoId=2B&nombre=Juan&edificioNombre=Edificio%20Demo`;
+    const admin      = `${base}/timbrear-admin.html`;
+
+    result.innerHTML = `
+      <p style="color:#27ae60;font-weight:600;margin-bottom:12px;">
+        ✅ URLs para probar el sistema:
+      </p>
+      <div class="url-box" style="display:block">
+        <strong>🧑 Visitante (escanea QR)</strong>
+        <a href="${visitante}" target="_blank" style="color:#c8a84b">${visitante}</a>
+      </div>
+      <div class="url-box" style="display:block;margin-top:10px">
+        <strong>🏠 Residente Depto 2B (link de activación)</strong>
+        <a href="${residente}" target="_blank" style="color:#c8a84b">${residente}</a>
+      </div>
+      <div class="url-box" style="display:block;margin-top:10px">
+        <strong>⚙️ Consola Admin (solo para ustedes)</strong>
+        <a href="${admin}" target="_blank" style="color:#c8a84b">${admin}</a>
+      </div>
+      <p style="margin-top:16px;font-size:12px;color:#555;">
+        Para probar: abrí el link del Residente en un cel, activá el timbre.
+        Luego abrí el link del Visitante en otro cel y tocá el depto 2B.
+      </p>
+    `;
+  }
+
+  // ══════════════════════════════════════════
+  //  LOG
+  // ══════════════════════════════════════════
+  function log(tipo, texto) {
+    const box  = document.getElementById('log');
+    const span = document.createElement('span');
+    span.className = tipo;
+    span.textContent = texto;
+    const br = document.createElement('br');
+    box.appendChild(span);
+    box.appendChild(br);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function limpiarLog() {
+    document.getElementById('log').innerHTML = '';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TimbreAr — Mi Timbre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --negro:   #0d0d0d;
+      --grafito: #1a1a1a;
+      --panel:   #222222;
+      --panel2:  #2a2a2a;
+      --borde:   #333333;
+      --plata:   #888888;
+      --blanco:  #f0f0f0;
+      --dorado:  #c8a84b;
+      --dorado2: #e8c96a;
+      --verde:   #27ae60;
+      --rojo:    #c0392b;
+      --azul:    #2471a3;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--negro);
+      color: var(--blanco);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+      overflow-y: auto;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    /* ════════════════════════════
+       PANTALLA 1 — ACTIVACIÓN
+    ════════════════════════════ */
+    #screen-activar {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #1e1e1e 0%, #0d0d0d 70%);
+      padding: 32px 24px;
+    }
+    .activar-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+    }
+    .brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 3px;
+    }
+    .brand span { color: var(--dorado); }
+    .activar-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+      border: 2px solid var(--dorado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      box-shadow: 0 0 40px rgba(200,168,75,.15);
+    }
+    .activar-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blanco);
+      line-height: 1.3;
+    }
+    .activar-depto {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      letter-spacing: 4px;
+      color: var(--dorado);
+      line-height: 1;
+    }
+    .activar-sub {
+      font-size: 13px;
+      color: var(--plata);
+      line-height: 1.7;
+    }
+    .activar-sub strong { color: var(--blanco); }
+
+    .form-activar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-field {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: var(--blanco);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      width: 100%;
+      transition: border-color .2s;
+    }
+    .input-field:focus { border-color: var(--dorado); }
+    .input-field::placeholder { color: #555; }
+
+    .btn-activar {
+      background: linear-gradient(135deg, var(--dorado), var(--dorado2));
+      color: var(--negro);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(200,168,75,.3);
+      transition: transform .15s, opacity .15s;
+      margin-top: 4px;
+    }
+    .btn-activar:active { transform: scale(.97); }
+
+    .instalar-hint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: left;
+      width: 100%;
+    }
+    .instalar-hint-icon { font-size: 24px; flex-shrink: 0; }
+    .instalar-hint-text { font-size: 12px; color: var(--plata); line-height: 1.5; }
+    .instalar-hint-text strong { color: var(--blanco); }
+
+    /* ════════════════════════════
+       PANTALLA 2 — INICIO (LISTO)
+    ════════════════════════════ */
+    #screen-inicio {
+      justify-content: flex-start;
+      background: var(--negro);
+    }
+    .inicio-header {
+      width: 100%;
+      background: var(--grafito);
+      border-bottom: 1px solid var(--borde);
+      padding: 20px 24px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .inicio-header-left {}
+    .inicio-greeting { font-size: 12px; color: var(--plata); }
+    .inicio-name { font-size: 18px; font-weight: 700; color: var(--blanco); margin-top: 2px; }
+    .inicio-depto-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--dorado);
+      letter-spacing: 2px;
+      background: rgba(200,168,75,.1);
+      border: 1px solid rgba(200,168,75,.3);
+      border-radius: 10px;
+      padding: 6px 16px;
+    }
+
+    .status-card {
+      margin: 20px 20px 0;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      padding: 20px;
+      width: calc(100% - 40px);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-dot-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .status-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--verde);
+    }
+    .status-dot-ring {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid var(--verde);
+      animation: ping 2s ease-out infinite;
+    }
+    @keyframes ping { 0%{opacity:.7;transform:scale(1)} 100%{opacity:0;transform:scale(1.8)} }
+    .status-text { flex: 1; }
+    .status-title { font-size: 14px; font-weight: 600; color: var(--verde); }
+    .status-sub { font-size: 12px; color: var(--plata); margin-top: 2px; }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--plata);
+      padding: 20px 24px 10px;
+      width: 100%;
+    }
+
+    .historial-list {
+      width: 100%;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .historial-item {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .hist-icon { font-size: 22px; flex-shrink: 0; }
+    .hist-info { flex: 1; }
+    .hist-title { font-size: 13px; font-weight: 600; color: var(--blanco); }
+    .hist-time { font-size: 11px; color: var(--plata); margin-top: 2px; }
+    .hist-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .hist-badge.atendida { background: rgba(39,174,96,.15); color: var(--verde); }
+    .hist-badge.perdida { background: rgba(192,57,43,.15); color: var(--rojo); }
+
+    .btn-demo {
+      margin: 24px 20px;
+      width: calc(100% - 40px);
+      background: var(--panel);
+      border: 1px dashed var(--borde);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--plata);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color .2s, color .2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-demo:hover { border-color: var(--dorado); color: var(--dorado); }
+
+    /* ════════════════════════════
+       PANTALLA 3 — TIMBRE ENTRANTE
+    ════════════════════════════ */
+    #screen-timbre {
+      justify-content: center;
+      background: var(--negro);
+      z-index: 50;
+    }
+    .timbre-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, rgba(200,168,75,.08) 0%, transparent 70%);
+      animation: timbre-pulse-bg 1.5s ease-in-out infinite;
+    }
+    @keyframes timbre-pulse-bg {
+      0%,100% { opacity: .5; }
+      50% { opacity: 1; }
+    }
+    .timbre-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      max-width: 340px;
+      width: 100%;
+    }
+    .timbre-icon-wrap {
+      position: relative;
+      width: 120px;
+      height: 120px;
+    }
+    .timbre-icon-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+      border: 2px solid var(--dorado);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      position: relative;
+      z-index: 2;
+    }
+    .ring { position: absolute; border-radius: 50%; border: 2px solid var(--dorado); inset: 0; animation: ring-out 1.8s ease-out infinite; }
+    .ring:nth-child(2) { animation-delay: .4s; }
+    .ring:nth-child(3) { animation-delay: .8s; }
+    @keyframes ring-out {
+      0%   { opacity: .8; transform: scale(1); }
+      100% { opacity: 0;  transform: scale(1.9); }
+    }
+
+    .timbre-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dorado);
+    }
+    .timbre-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 3px;
+      color: var(--blanco);
+      line-height: 1;
+    }
+    .timbre-edificio {
+      font-size: 13px;
+      color: var(--plata);
+    }
+
+    .timbre-actions {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .btn-rechazar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .btn-rechazar-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--rojo);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(192,57,43,.4);
+      transition: transform .15s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-rechazar-circle:active { transform: scale(.93); }
+    .btn-rechazar-label { font-size: 11px; color: var(--plata); }
+    .btn-atender {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .btn-atender-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--verde);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(39,174,96,.4);
+      transition: transform .15s;
+      border: none;
+      cursor: pointer;
+      animation: atender-bounce .6s ease-in-out infinite alternate;
+    }
+    @keyframes atender-bounce { 0%{transform:scale(1)} 100%{transform:scale(1.07)} }
+    .btn-atender-circle:active { transform: scale(.93); animation: none; }
+    .btn-atender-label { font-size: 11px; color: var(--verde); font-weight: 600; }
+
+    /* ════════════════════════════
+       PANTALLA 4 — CHAT RESIDENTE
+    ════════════════════════════ */
+    #screen-chat-residente {
+      justify-content: flex-start;
+      background: var(--negro);
+    }
+    .chat-header {
+      width: 100%;
+      background: var(--grafito);
+      border-bottom: 1px solid var(--borde);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .chat-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .chat-header-info { flex: 1; }
+    .chat-header-name { font-size: 14px; font-weight: 600; }
+    .chat-header-status { font-size: 11px; color: var(--verde); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .chat-header-status::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--verde); display:inline-block; }
+
+    .btn-abrir-puerta {
+      background: linear-gradient(135deg, var(--verde), #2ecc71);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: transform .15s;
+      flex-shrink: 0;
+    }
+    .btn-abrir-puerta:active { transform: scale(.95); }
+    .btn-abrir-puerta .door-icon { font-size: 18px; }
+
+    .chat-messages {
+      flex: 1;
+      width: 100%;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      height: calc(100vh - 160px);
+    }
+    .msg {
+      max-width: 78%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-visitor {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      color: var(--blanco);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .msg-residente {
+      background: linear-gradient(135deg, rgba(200,168,75,.2), rgba(200,168,75,.1));
+      border: 1px solid rgba(200,168,75,.3);
+      color: var(--blanco);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-system {
+      align-self: center;
+      font-size: 11px;
+      color: var(--plata);
+      background: rgba(255,255,255,.05);
+      border-radius: 20px;
+      padding: 5px 14px;
+    }
+    .msg-time { font-size: 10px; color: var(--plata); margin-top: 4px; text-align: right; }
+
+    .chat-input-bar {
+      width: 100%;
+      background: var(--grafito);
+      border-top: 1px solid var(--borde);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      position: sticky;
+      bottom: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 24px;
+      padding: 12px 18px;
+      color: var(--blanco);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .chat-input:focus { border-color: var(--dorado); }
+    .chat-input::placeholder { color: #555; }
+    .btn-send {
+      background: linear-gradient(135deg, var(--dorado), var(--dorado2));
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: transform .15s;
+    }
+    .btn-send:active { transform: scale(.93); }
+    .btn-audio {
+      background: var(--panel);
+      border: 1px solid var(--borde);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .btn-audio.recording {
+      background: rgba(192,57,43,.2);
+      border-color: var(--rojo);
+      animation: rec-pulse 1s infinite;
+    }
+    @keyframes rec-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.4)} 50%{box-shadow:0 0 0 6px rgba(192,57,43,0)} }
+
+    .btn-fin-llamada {
+      background: var(--rojo);
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform .15s;
+    }
+    .btn-fin-llamada:active { transform: scale(.93); }
+
+    /* ════════════════════════════
+       PANTALLA 5 — PUERTA ABIERTA
+    ════════════════════════════ */
+    #screen-abierto {
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #0d2a1a 0%, #0d0d0d 80%);
+    }
+    .abierto-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .abierto-icon { font-size: 80px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
+    .abierto-title { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:4px; color:var(--verde); line-height:1; }
+    .abierto-sub { font-size:13px; color:var(--plata); max-width:240px; line-height:1.6; }
+    .btn-volver {
+      background: transparent;
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 36px;
+      color: var(--blanco);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color .2s;
+    }
+    .btn-volver:hover { border-color: var(--dorado); }
+
+    /* ════════════════════════════
+       NOTIFICACIÓN VISUAL
+    ════════════════════════════ */
+    .notif-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 16px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .notif-overlay.show { opacity: 1; pointer-events: all; }
+    .notif-card {
+      background: var(--grafito);
+      border: 1px solid var(--dorado);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.8), 0 0 0 1px rgba(200,168,75,.2);
+      transform: translateY(-20px);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .notif-overlay.show .notif-card { transform: translateY(0); }
+    .notif-bell { font-size: 32px; animation: bell-shake .5s ease-in-out 3; }
+    @keyframes bell-shake {
+      0%,100%{transform:rotate(0)} 20%{transform:rotate(-15deg)} 40%{transform:rotate(15deg)} 60%{transform:rotate(-10deg)} 80%{transform:rotate(10deg)}
+    }
+    .notif-info { flex: 1; }
+    .notif-app { font-size: 10px; letter-spacing: 2px; color: var(--dorado); text-transform: uppercase; font-weight: 600; }
+    .notif-msg { font-size: 14px; color: var(--blanco); font-weight: 600; margin-top: 2px; }
+    .notif-sub { font-size: 12px; color: var(--plata); margin-top: 2px; }
+    .notif-btn {
+      background: var(--dorado);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: var(--negro);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     PANTALLA 1 — ACTIVACIÓN
+════════════════════════════ -->
+<div class="screen active" id="screen-activar">
+  <div class="activar-inner">
+    <div class="brand">Timbre<span>Ar</span></div>
+
+    <div class="activar-icon">🔔</div>
+
+    <div>
+      <div style="font-size:12px;color:var(--plata);margin-bottom:6px;letter-spacing:1px;">Tu departamento</div>
+      <div class="activar-depto" id="act-depto">7A</div>
+    </div>
+
+    <div class="activar-title">Activá tu<br>timbre virtual</div>
+
+    <p class="activar-sub">
+      Hola <strong id="act-nombre">Juan</strong>, el edificio <strong id="act-edificio">San Martín</strong>
+      ya tiene <strong>TimbreAr</strong>.<br><br>
+      Completá tu nombre para que los visitantes sepan a quién llaman y empezá a recibir llamadas en este celular.
+    </p>
+
+    <div class="form-activar">
+      <input class="input-field" type="text" id="input-nombre" placeholder="Tu nombre (ej: Juan Pérez)" />
+      <button class="btn-activar" onclick="activar()">🔔 Activar mi timbre</button>
+    </div>
+
+    <div class="instalar-hint">
+      <div class="instalar-hint-icon">📱</div>
+      <div class="instalar-hint-text">
+        <strong>Instalá la app en tu pantalla de inicio</strong><br>
+        Tocá el ícono de compartir en tu navegador y elegí "Agregar a inicio" para recibir notificaciones como una app.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PANTALLA 2 — INICIO
+════════════════════════════ -->
+<div class="screen" id="screen-inicio">
+  <div class="inicio-header">
+    <div class="inicio-header-left">
+      <div class="inicio-greeting">Bienvenido/a</div>
+      <div class="inicio-name" id="inicio-nombre">Juan Pérez</div>
+    </div>
+    <div class="inicio-depto-badge" id="inicio-depto">7A</div>
+  </div>
+
+  <div class="status-card">
+    <div class="status-dot-wrap">
+      <div class="status-dot"></div>
+      <div class="status-dot-ring"></div>
+    </div>
+    <div class="status-text">
+      <div class="status-title">Timbre activo</div>
+      <div class="status-sub">Recibirás una notificación cuando alguien llame</div>
+    </div>
+  </div>
+
+  <div class="section-label">Últimas visitas</div>
+
+  <div class="historial-list">
+    <div class="historial-item">
+      <div class="hist-icon">🚪</div>
+      <div class="hist-info">
+        <div class="hist-title">Visita en portería</div>
+        <div class="hist-time">Hoy, 14:32</div>
+      </div>
+      <span class="hist-badge atendida">Atendida</span>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">📦</div>
+      <div class="hist-info">
+        <div class="hist-title">Visita en portería</div>
+        <div class="hist-time">Ayer, 10:15</div>
+      </div>
+      <span class="hist-badge atendida">Atendida</span>
+    </div>
+    <div class="historial-item">
+      <div class="hist-icon">🚪</div>
+      <div class="hist-info">
+        <div class="hist-title">Visita en portería</div>
+        <div class="hist-time">Lun, 18:45</div>
+      </div>
+      <span class="hist-badge perdida">Perdida</span>
+    </div>
+  </div>
+
+  <button class="btn-demo" onclick="simularTimbre()">
+    🔔 Simular timbre entrante (demo)
+  </button>
+</div>
+
+<!-- ════════════════════════════
+     PANTALLA 3 — TIMBRE ENTRANTE
+════════════════════════════ -->
+<div class="screen" id="screen-timbre">
+  <div class="timbre-bg"></div>
+  <div class="timbre-inner">
+    <div class="timbre-icon-wrap">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="timbre-icon-circle">🔔</div>
+    </div>
+    <div class="timbre-label">Alguien en la puerta</div>
+    <div class="timbre-title">VISITA<br>ENTRANTE</div>
+    <div class="timbre-edificio" id="timbre-edificio">Edificio San Martín</div>
+
+    <div class="timbre-actions">
+      <div class="btn-rechazar">
+        <button class="btn-rechazar-circle" onclick="rechazarLlamada()">📵</button>
+        <span class="btn-rechazar-label">Rechazar</span>
+      </div>
+      <div class="btn-atender">
+        <button class="btn-atender-circle" onclick="atenderLlamada()">📞</button>
+        <span class="btn-atender-label">Atender</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PANTALLA 4 — CHAT RESIDENTE
+════════════════════════════ -->
+<div class="screen" id="screen-chat-residente">
+  <div class="chat-header">
+    <div class="chat-avatar">🧑</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">Visitante en portería</div>
+      <div class="chat-header-status">Conectado</div>
+    </div>
+    <button class="btn-abrir-puerta" onclick="abrirPuerta()">
+      <span class="door-icon">🔓</span>
+      <span>Abrir</span>
+    </button>
+  </div>
+
+  <div class="chat-messages" id="chatMsgs">
+    <div class="msg msg-system">Llamada conectada · Depto <span id="chat-depto-ref">7A</span></div>
+    <div class="msg msg-visitor">
+      Hola, soy el delivery de MercadoLibre
+      <div class="msg-time">ahora</div>
+    </div>
+  </div>
+
+  <div class="chat-input-bar">
+    <button class="btn-fin-llamada" onclick="finalizarLlamada()" title="Colgar">📵</button>
+    <input class="chat-input" id="chatInput" type="text" placeholder="Escribí un mensaje..."
+      onkeydown="if(event.key==='Enter') enviarMensaje()" />
+    <button class="btn-audio" id="btnAudio" onclick="toggleAudio()" title="Audio">🎙️</button>
+    <button class="btn-send" onclick="enviarMensaje()">➤</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PANTALLA 5 — PUERTA ABIERTA
+════════════════════════════ -->
+<div class="screen" id="screen-abierto">
+  <div class="abierto-inner">
+    <div class="abierto-icon">🔓</div>
+    <div class="abierto-title">PUERTA<br>ABIERTA</div>
+    <p class="abierto-sub">La puerta fue desbloqueada. El visitante ya puede ingresar.</p>
+    <button class="btn-volver" onclick="volverInicio()">Volver al inicio</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     NOTIFICACIÓN VISUAL
+════════════════════════════ -->
+<div class="notif-overlay" id="notifOverlay">
+  <div class="notif-card">
+    <div class="notif-bell">🔔</div>
+    <div class="notif-info">
+      <div class="notif-app">TimbreAr</div>
+      <div class="notif-msg">¡Alguien en tu puerta!</div>
+      <div class="notif-sub" id="notif-sub">Depto 7A · Edificio San Martín</div>
+    </div>
+    <button class="notif-btn" onclick="irATimbre()">Ver</button>
+  </div>
+</div>
+
+<script type="module">
+  // ═══════════════════════════════════════════════════════
+  //  FIREBASE SDK
+  // ═══════════════════════════════════════════════════════
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, collection, query, where, orderBy,
+           onSnapshot, addDoc, updateDoc, serverTimestamp }
+                             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+  const VAPID_KEY = "BK0uWHh3WZ_Z5QUi29IqgziMUnOgV-Cz3Kk1VwzveB2xw0DfLS89xgmf52hEqoy-P9wmw46ChedBVhvigh14jB8";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCvD2dC6Fw976Bi_O2OZmhKFQ7mm1uVp40",
+    authDomain:        "timbrear-cdc41.firebaseapp.com",
+    projectId:         "timbrear-cdc41",
+    storageBucket:     "timbrear-cdc41.firebasestorage.app",
+    messagingSenderId: "707107985985",
+    appId:             "1:707107985985:web:39126f161b9bb719f904c0"
+  };
+
+  const app       = initializeApp(firebaseConfig);
+  const db        = getFirestore(app);
+  const auth      = getAuth(app);
+  const messaging = getMessaging(app);
+  await signInAnonymously(auth);
+
+  // ── Registrar Service Worker para push en background ──
+  async function registrarSW() {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      return reg;
+    } catch(e) {
+      console.log('SW no disponible (normal en local):', e.message);
+      return null;
+    }
+  }
+
+  // ── Obtener token FCM y guardarlo en Firestore ──
+  async function registrarPush(deptoId, edificioId) {
+    try {
+      const swReg = await registrarSW();
+      const token = await getToken(messaging, {
+        vapidKey:            VAPID_KEY,
+        serviceWorkerRegistration: swReg || undefined
+      });
+      if (token) {
+        // Guardar token en Firestore para que el servidor lo use al enviar push
+        await updateDoc(doc(db, 'edificios', edificioId, 'departamentos', deptoId), {
+          fcmToken: token,
+          tokenEn:  serverTimestamp()
+        }).catch(() => {
+          // Si la estructura de subcolección no existe, guardar en raíz
+          addDoc(collection(db, 'fcmTokens'), {
+            token, deptoId, edificioId, ts: serverTimestamp()
+          });
+        });
+        console.log('✅ Token FCM registrado');
+      }
+    } catch(e) {
+      console.log('Push no disponible (requiere HTTPS + SW):', e.message);
+    }
+  }
+
+  // ── Mensajes push mientras la app está abierta ──
+  onMessage(messaging, (payload) => {
+    console.log('Push recibido en foreground:', payload);
+    reproducirTimbre();
+    mostrarNotificacion();
+  });
+
+  // ═══════════════════════════════════════════════════════
+  //  PARÁMETROS DEL LINK DE ACTIVACIÓN
+  //  URL: residente.html?edificio=ID&depto=7A&deptoId=abc&nombre=Juan
+  // ═══════════════════════════════════════════════════════
+  const params       = new URLSearchParams(window.location.search);
+  const deptoParam   = params.get('depto')    || '7A';
+  const deptoId      = params.get('deptoId')  || deptoParam;
+  const nombreParam  = params.get('nombre')   || '';
+  const edificioId   = params.get('edificio') || 'demo';
+  const edificioNombreParam = params.get('edificioNombre') || 'Tu edificio';
+
+  // Pre-llenar pantalla de activación
+  document.getElementById('act-depto').textContent    = deptoParam;
+  document.getElementById('act-nombre').textContent   = nombreParam || 'vecino/a';
+  document.getElementById('act-edificio').textContent = edificioNombreParam;
+  document.getElementById('input-nombre').value       = nombreParam;
+
+  // ═══════════════════════════════════════════════════════
+  //  ESTADO
+  // ═══════════════════════════════════════════════════════
+  let residente    = JSON.parse(localStorage.getItem('timbrear_residente_' + deptoId) || 'null');
+  let sesionActiva = null;
+  let sesionUnsub  = null;
+  let chatUnsub    = null;
+  let isRecording  = false;
+  let mediaRecorder = null;
+
+  // ═══════════════════════════════════════════════════════
+  //  NAVEGACIÓN
+  // ═══════════════════════════════════════════════════════
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ACTIVACIÓN
+  // ═══════════════════════════════════════════════════════
+  window.activar = async () => {
+    const nombre = document.getElementById('input-nombre').value.trim();
+    if (!nombre) {
+      document.getElementById('input-nombre').style.borderColor = 'var(--rojo)';
+      setTimeout(() => document.getElementById('input-nombre').style.borderColor = '', 2000);
+      return;
+    }
+
+    residente = { nombre, depto: deptoParam, deptoId, edificioId, edificioNombre: edificioNombreParam };
+    localStorage.setItem('timbrear_residente_' + deptoId, JSON.stringify(residente));
+
+    // Pedir permisos de notificaciones push
+    await solicitarNotificaciones();
+
+    // Marcar depto como activado en Firestore
+    try {
+      await updateDoc(doc(db, 'edificios', edificioId, 'departamentos', deptoId), {
+        activado:    true,
+        nombreReal:  nombre,
+        activadoEn:  serverTimestamp()
+      });
+    } catch(e) {
+      console.log('No se pudo actualizar Firestore:', e);
+    }
+
+    // Registrar token FCM para notificaciones push nativas
+    await registrarPush(deptoId, edificioId);
+
+    document.getElementById('inicio-nombre').textContent = nombre;
+    document.getElementById('inicio-depto').textContent  = deptoParam;
+    showScreen('screen-inicio');
+    escucharLlamadas();
+  };
+
+  async function solicitarNotificaciones() {
+    if ('Notification' in window) {
+      const permiso = await Notification.requestPermission();
+      console.log('Notificaciones:', permiso);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ESCUCHAR LLAMADAS ENTRANTES EN TIEMPO REAL
+  //  Firestore: sesiones donde deptoId == este depto y estado == 'llamando'
+  // ═══════════════════════════════════════════════════════
+  function escucharLlamadas() {
+    const q = query(
+      collection(db, 'sesiones'),
+      where('edificioId', '==', edificioId),
+      where('deptoId',    '==', deptoId),
+      where('estado',     '==', 'llamando')
+    );
+
+    sesionUnsub = onSnapshot(q, (snap) => {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const sesion = { id: change.doc.id, ...change.doc.data() };
+          recibirLlamada(sesion);
+        }
+      });
+    });
+  }
+
+  function recibirLlamada(sesion) {
+    sesionActiva = sesion;
+    document.getElementById('timbre-edificio').textContent = sesion.edificioNombre || edificioNombreParam;
+    document.getElementById('notif-sub').textContent = `Depto ${deptoParam} · ${sesion.edificioNombre || edificioNombreParam}`;
+
+    reproducirTimbre();
+    mostrarNotificacion();
+
+    // Notificación del sistema
+    if (Notification.permission === 'granted') {
+      const notif = new Notification('🔔 TimbreAr — ¡Alguien en tu puerta!', {
+        body: `Depto ${deptoParam} · ${sesion.edificioNombre}`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+        requireInteraction: true
+      });
+      notif.onclick = () => { irATimbre(); notif.close(); };
+    }
+
+    setTimeout(() => {
+      if (document.getElementById('notifOverlay').classList.contains('show')) {
+        ocultarNotificacion();
+        showScreen('screen-timbre');
+      }
+    }, 4000);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  DEMO (cuando no hay llamada real)
+  // ═══════════════════════════════════════════════════════
+  window.simularTimbre = () => {
+    sesionActiva = { id: 'demo', edificioNombre: edificioNombreParam };
+    document.getElementById('timbre-edificio').textContent = edificioNombreParam;
+    document.getElementById('notif-sub').textContent = `Depto ${deptoParam} · ${edificioNombreParam}`;
+    mostrarNotificacion();
+    reproducirTimbre();
+    setTimeout(() => {
+      if (document.getElementById('notifOverlay').classList.contains('show')) {
+        ocultarNotificacion();
+        showScreen('screen-timbre');
+      }
+    }, 4000);
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  NOTIFICACIÓN VISUAL
+  // ═══════════════════════════════════════════════════════
+  function mostrarNotificacion() { document.getElementById('notifOverlay').classList.add('show'); }
+  function ocultarNotificacion() { document.getElementById('notifOverlay').classList.remove('show'); }
+  window.irATimbre = () => { ocultarNotificacion(); showScreen('screen-timbre'); };
+
+  // ═══════════════════════════════════════════════════════
+  //  SONIDO DING DONG
+  // ═══════════════════════════════════════════════════════
+  function reproducirTimbre() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const tocar = (freq, t, dur) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
+        gain.gain.setValueAtTime(0, ctx.currentTime + t);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + dur);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + dur);
+      };
+      tocar(880, 0,    0.35);
+      tocar(659, 0.38, 0.5);
+      tocar(880, 1.1,  0.35);
+      tocar(659, 1.48, 0.5);
+    } catch(e) { console.log('Audio no disponible'); }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ATENDER / RECHAZAR
+  // ═══════════════════════════════════════════════════════
+  window.atenderLlamada = async () => {
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' });
+    }
+    document.getElementById('chat-depto-ref').textContent = deptoParam;
+    const msgs = document.getElementById('chatMsgs');
+    msgs.innerHTML = `<div class="msg msg-system">Llamada conectada · Depto ${deptoParam}</div>`;
+    showScreen('screen-chat-residente');
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') escucharMensajes(sesionActiva.id);
+  };
+
+  window.rechazarLlamada = async () => {
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'rechazada' });
+    }
+    sesionActiva = null;
+    showScreen('screen-inicio');
+  };
+
+  window.finalizarLlamada = async () => {
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      await updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'finalizada' });
+    }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    sesionActiva = null;
+    showScreen('screen-inicio');
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  CHAT EN TIEMPO REAL
+  // ═══════════════════════════════════════════════════════
+  function escucharMensajes(sesId) {
+    chatUnsub = onSnapshot(
+      collection(db, 'sesiones', sesId, 'mensajes'),
+      (snap) => {
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const d = change.doc.data();
+            if (d.de === 'visitor') agregarMensaje(d.texto || '🎙️', 'visitor');
+          }
+        });
+      }
+    );
+  }
+
+  window.enviarMensaje = async () => {
+    const input = document.getElementById('chatInput');
+    const txt   = input.value.trim();
+    if (!txt) return;
+    input.value = '';
+    agregarMensaje(txt, 'residente');
+
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      await addDoc(collection(db, 'sesiones', sesionActiva.id, 'mensajes'), {
+        texto: txt,
+        de:    'resident',
+        ts:    serverTimestamp()
+      });
+    }
+  };
+
+  function agregarMensaje(txt, de) {
+    const msgs = document.getElementById('chatMsgs');
+    const div  = document.createElement('div');
+    div.className = `msg msg-${de}`;
+    div.innerHTML = `${txt}<div class="msg-time">${hora()}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  AUDIO
+  // ═══════════════════════════════════════════════════════
+  window.toggleAudio = () => {
+    const btn = document.getElementById('btnAudio');
+    if (!isRecording) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        const chunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const url  = URL.createObjectURL(blob);
+          const div  = document.createElement('div');
+          div.className = 'msg msg-residente';
+          div.innerHTML = `<audio controls src="${url}" style="max-width:180px;border-radius:8px;"></audio><div class="msg-time">${hora()}</div>`;
+          document.getElementById('chatMsgs').appendChild(div);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        btn.classList.add('recording');
+        btn.textContent = '⏹️';
+      }).catch(() => alert('No se pudo acceder al micrófono'));
+    } else {
+      mediaRecorder.stop();
+      isRecording = false;
+      btn.classList.remove('recording');
+      btn.textContent = '🎙️';
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
+  //  PUERTA
+  // ═══════════════════════════════════════════════════════
+  window.abrirPuerta = async () => {
+    if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      await updateDoc(doc(db, 'sesiones', sesionActiva.id), {
+        estado:        'finalizada',
+        puertaAbierta: true,
+        abiertaEn:     serverTimestamp()
+      });
+    }
+    if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+    showScreen('screen-abierto');
+    setTimeout(() => volverInicio(), 6000);
+  };
+
+  window.volverInicio = () => showScreen('screen-inicio');
+
+  // ═══════════════════════════════════════════════════════
+  //  UTILS
+  // ═══════════════════════════════════════════════════════
+  function hora() {
+    return new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════════
+  if (residente) {
+    document.getElementById('inicio-nombre').textContent = residente.nombre;
+    document.getElementById('inicio-depto').textContent  = residente.depto;
+    showScreen('screen-inicio');
+    escucharLlamadas();
+  }
+</script>
+</body>
+</html>
