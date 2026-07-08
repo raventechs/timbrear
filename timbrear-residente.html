@@ -854,6 +854,8 @@
                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
+                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
   const VAPID_KEY = "BK0uWHh3WZ_Z5QUi29IqgziMUnOgV-Cz3Kk1VwzveB2xw0DfLS89xgmf52hEqoy-P9wmw46ChedBVhvigh14jB8";
 
@@ -870,6 +872,7 @@
   const db        = getFirestore(app);
   const auth      = getAuth(app);
   const messaging = getMessaging(app);
+  const storage   = getStorage(app);
   await signInAnonymously(auth);
 
   // ── Registrar Service Worker para push en background ──
@@ -1134,11 +1137,26 @@
         snap.docChanges().forEach(change => {
           if (change.type === 'added') {
             const d = change.doc.data();
-            if (d.de === 'visitor') agregarMensaje(d.texto || '🎙️', 'visitor');
+            if (d.de === 'visitor') {
+              if (d.tipo === 'audio' && d.url) {
+                agregarAudioRecibido(d.url, 'visitor');
+              } else if (d.texto) {
+                agregarMensaje(d.texto, 'visitor');
+              }
+            }
           }
         });
       }
     );
+  }
+
+  function agregarAudioRecibido(url, de) {
+    const msgs = document.getElementById('chatMsgs');
+    const div  = document.createElement('div');
+    div.className = `msg msg-${de}`;
+    div.innerHTML = `<audio controls src="${url}" style="max-width:180px;border-radius:8px;"></audio><div class="msg-time">${hora()}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   window.enviarMensaje = async () => {
@@ -1176,14 +1194,36 @@
         const chunks = [];
         mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
+        mediaRecorder.onstop = async () => {
           const blob = new Blob(chunks, { type: 'audio/webm' });
-          const url  = URL.createObjectURL(blob);
+          stream.getTracks().forEach(t => t.stop());
+
+          const msgs = document.getElementById('chatMsgs');
           const div  = document.createElement('div');
           div.className = 'msg msg-residente';
-          div.innerHTML = `<audio controls src="${url}" style="max-width:180px;border-radius:8px;"></audio><div class="msg-time">${hora()}</div>`;
-          document.getElementById('chatMsgs').appendChild(div);
-          stream.getTracks().forEach(t => t.stop());
+          div.innerHTML = `<span style="color:var(--plata);font-size:12px;">🎙️ Subiendo audio...</span><div class="msg-time">${hora()}</div>`;
+          msgs.appendChild(div);
+          msgs.scrollTop = msgs.scrollHeight;
+
+          try {
+            const nombre   = `audios/${sesionActiva.id}/${Date.now()}_resident.webm`;
+            const aRef     = storageRef(storage, nombre);
+            await uploadBytes(aRef, blob);
+            const url = await getDownloadURL(aRef);
+
+            div.innerHTML = `<audio controls src="${url}" style="max-width:180px;border-radius:8px;"></audio><div class="msg-time">${hora()}</div>`;
+
+            if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+              await addDoc(collection(db, 'sesiones', sesionActiva.id, 'mensajes'), {
+                tipo: 'audio',
+                url:  url,
+                de:   'resident',
+                ts:   serverTimestamp()
+              });
+            }
+          } catch(e) {
+            div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error al enviar audio</span><div class="msg-time">${hora()}</div>`;
+          }
         };
         mediaRecorder.start();
         isRecording = true;
