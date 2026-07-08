@@ -873,7 +873,17 @@
   const auth      = getAuth(app);
   const messaging = getMessaging(app);
   const storage   = getStorage(app, 'gs://timbrear-cdc41.firebasestorage.app');
-  await signInAnonymously(auth);
+
+  // Siempre asegurar sesión activa antes de operaciones
+  async function ensureAuth() {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+      console.log('✅ Auth anónimo renovado (residente)');
+    }
+    return auth.currentUser;
+  }
+
+  await ensureAuth();
 
   // ── Registrar Service Worker para push en background ──
   async function registrarSW() {
@@ -1229,6 +1239,8 @@
           msgs.scrollTop = msgs.scrollHeight;
 
           try {
+            const user = await ensureAuth();
+            console.log('Auth OK residente, uid:', user?.uid);
             const sesId  = sesionActiva?.id && sesionActiva.id !== 'demo' ? sesionActiva.id : 'sin-sesion';
             const nombre = `audios/${sesId}/${Date.now()}_resident.${ext}`;
             const aRef   = storageRef(storage, nombre);
