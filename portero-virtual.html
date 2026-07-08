@@ -732,7 +732,7 @@
   //  FIREBASE — SDK
   // ═══════════════════════════════════════════════════════
   import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, getDocs, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
                                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -778,35 +778,37 @@
   // ═══════════════════════════════════════════════════════
   async function cargarEdificio() {
     try {
-      const ref  = doc(db, 'edificios', edificioId);
-      const snap = await getDoc(ref);
+      // 1 — Leer datos del edificio
+      const edificioSnap = await getDoc(doc(db, 'edificios', edificioId));
 
-      if (!snap.exists()) {
-        // Modo DEMO si no existe el edificio
-        CONFIG = {
-          edificio: { nombre: "Edificio Demo", direccion: "Dirección de ejemplo" },
-          departamentos: [
-            { id:"1A", etiqueta:"1A", piso:"1er Piso" },
-            { id:"1B", etiqueta:"1B", piso:"1er Piso" },
-            { id:"1C", etiqueta:"1C", piso:"1er Piso" },
-            { id:"2A", etiqueta:"2A", piso:"2do Piso" },
-            { id:"2B", etiqueta:"2B", piso:"2do Piso" },
-            { id:"2C", etiqueta:"2C", piso:"2do Piso" },
-            { id:"3A", etiqueta:"3A", piso:"3er Piso" },
-            { id:"3B", etiqueta:"3B", piso:"3er Piso" },
-            { id:"3C", etiqueta:"3C", piso:"3er Piso" },
-          ]
-        };
+      if (!edificioSnap.exists()) {
+        console.warn('Edificio no encontrado, usando modo demo');
+        CONFIG.edificio = { nombre: "Edificio Demo", direccion: "" };
       } else {
-        const data = snap.data();
-        CONFIG = {
-          edificio: { nombre: data.nombre, direccion: data.direccion },
-          departamentos: (data.departamentos || []).map(d => ({
-            id:       d.id || d.etiqueta,
-            etiqueta: d.etiqueta,
-            piso:     d.piso || inferirPiso(d.etiqueta)
-          }))
-        };
+        const data = edificioSnap.data();
+        CONFIG.edificio = { nombre: data.nombre, direccion: data.direccion || "" };
+      }
+
+      // 2 — Leer departamentos desde la SUBCOLECCIÓN
+      const deptosSnap = await getDocs(
+        collection(db, 'edificios', edificioId, 'departamentos')
+      );
+
+      if (deptosSnap.empty) {
+        console.warn('Sin departamentos en Firestore');
+        CONFIG.departamentos = [];
+      } else {
+        CONFIG.departamentos = [];
+        deptosSnap.forEach(d => {
+          const data = d.data();
+          CONFIG.departamentos.push({
+            id:       d.id,
+            etiqueta: data.etiqueta || d.id,
+            piso:     data.piso     || inferirPiso(data.etiqueta || d.id)
+          });
+        });
+        // Ordenar por etiqueta (1A, 1B, 2A, etc.)
+        CONFIG.departamentos.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta));
       }
 
       document.getElementById('edificioNombre').textContent = CONFIG.edificio.nombre;
