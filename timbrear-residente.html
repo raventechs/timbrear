@@ -1199,11 +1199,27 @@
     if (!isRecording) {
       navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
         const chunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+        // Detectar formato soportado (iOS = mp4, Chrome/Android = webm)
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : '';
+
+        const opciones  = mimeType ? { mimeType } : {};
+        mediaRecorder   = new MediaRecorder(stream, opciones);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+
         mediaRecorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
           stream.getTracks().forEach(t => t.stop());
+          const tipo = mimeType || 'audio/mp4';
+          const ext  = tipo.includes('webm') ? 'webm' : 'mp4';
+          const blob = new Blob(chunks, { type: tipo });
+          console.log('Audio residente grabado:', blob.size, 'bytes, tipo:', tipo);
 
           const msgs = document.getElementById('chatMsgs');
           const div  = document.createElement('div');
@@ -1213,10 +1229,12 @@
           msgs.scrollTop = msgs.scrollHeight;
 
           try {
-            const nombre   = `audios/${sesionActiva.id}/${Date.now()}_resident.webm`;
-            const aRef     = storageRef(storage, nombre);
-            await uploadBytes(aRef, blob);
+            const sesId  = sesionActiva?.id && sesionActiva.id !== 'demo' ? sesionActiva.id : 'sin-sesion';
+            const nombre = `audios/${sesId}/${Date.now()}_resident.${ext}`;
+            const aRef   = storageRef(storage, nombre);
+            await uploadBytes(aRef, blob, { contentType: blob.type });
             const url = await getDownloadURL(aRef);
+            console.log('✅ Audio residente subido:', url);
 
             div.innerHTML = `<audio controls src="${url}" style="max-width:180px;border-radius:8px;"></audio><div class="msg-time">${hora()}</div>`;
 
@@ -1229,14 +1247,19 @@
               });
             }
           } catch(e) {
-            div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error al enviar audio</span><div class="msg-time">${hora()}</div>`;
+            console.error('❌ Error audio residente:', e.code, e.message);
+            div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error: ${e.message}</span><div class="msg-time">${hora()}</div>`;
           }
         };
+
         mediaRecorder.start();
         isRecording = true;
         btn.classList.add('recording');
         btn.textContent = '⏹️';
-      }).catch(() => alert('No se pudo acceder al micrófono'));
+      }).catch(e => {
+        console.error('Error micrófono:', e);
+        alert('No se pudo acceder al micrófono');
+      });
     } else {
       mediaRecorder.stop();
       isRecording = false;
