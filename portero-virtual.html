@@ -1056,18 +1056,37 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const chunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          sendAudioMessage(blob);
-          stream.getTracks().forEach(t => t.stop());
+
+        // Detectar formato soportado por el dispositivo (iOS usa mp4, Android/Chrome usa webm)
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : '';
+
+        const opciones = mimeType ? { mimeType } : {};
+        mediaRecorder = new MediaRecorder(stream, opciones);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) chunks.push(e.data);
         };
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const tipo = mimeType || 'audio/mp4';
+          const ext  = tipo.includes('webm') ? 'webm' : 'mp4';
+          const blob = new Blob(chunks, { type: tipo });
+          console.log('Audio grabado:', blob.size, 'bytes, tipo:', tipo);
+          await sendAudioMessage(blob, ext);
+        };
+
         mediaRecorder.start();
         isRecording = true;
         btn.classList.add('recording');
         btn.textContent = '⏹️';
-      } catch(e) { alert('No se pudo acceder al micrófono'); }
+      } catch(e) {
+        console.error('Error micrófono:', e);
+        alert('No se pudo acceder al micrófono: ' + e.message);
+      }
     } else {
       mediaRecorder.stop();
       isRecording = false;
@@ -1076,7 +1095,7 @@
     }
   };
 
-  async function sendAudioMessage(blob) {
+  async function sendAudioMessage(blob, ext = 'webm') {
     const msgs = document.getElementById('chatMessages');
     const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
 
@@ -1088,27 +1107,32 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     try {
-      // Subir a Firebase Storage
-      const nombre   = `audios/${sesionId}/${Date.now()}_visitor.webm`;
+      console.log('Subiendo a Storage... sesionId:', sesionId);
+      const nombre   = `audios/${sesionId || 'sin-sesion'}/${Date.now()}_visitor.${ext}`;
       const audioRef = storageRef(storage, nombre);
-      await uploadBytes(audioRef, blob);
-      const url = await getDownloadURL(audioRef);
 
-      // Reemplazar placeholder con el audio real
+      await uploadBytes(audioRef, blob, { contentType: blob.type });
+      console.log('✅ Audio subido a Storage');
+
+      const url = await getDownloadURL(audioRef);
+      console.log('✅ URL obtenida:', url);
+
+      // Mostrar audio
       div.innerHTML = `<audio controls src="${url}" style="max-width:200px;border-radius:8px;"></audio><div class="msg-time">${time}</div>`;
 
-      // Guardar URL en Firestore para que el residente lo reciba
+      // Guardar en Firestore
       if (sesionId) {
         await addDoc(collection(db, 'sesiones', sesionId, 'mensajes'), {
-          tipo:  'audio',
-          url:   url,
-          de:    'visitor',
-          ts:    serverTimestamp()
+          tipo: 'audio',
+          url:  url,
+          de:   'visitor',
+          ts:   serverTimestamp()
         });
+        console.log('✅ Mensaje guardado en Firestore');
       }
     } catch(e) {
-      div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error al enviar audio</span><div class="msg-time">${time}</div>`;
-      console.error('Error subiendo audio:', e);
+      console.error('❌ Error subiendo audio:', e.code, e.message);
+      div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error: ${e.message}</span><div class="msg-time">${time}</div>`;
     }
   }
 
