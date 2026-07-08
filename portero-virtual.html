@@ -922,6 +922,21 @@
       });
       sesionId = sesionRef.id;
 
+      // Disparar push al residente via Netlify Function
+      fetch('/.netlify/functions/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          edificioId:     edificioId,
+          deptoId:        dept.id,
+          sesionId:       sesionId,
+          edificioNombre: CONFIG.edificio.nombre,
+          deptoEtiqueta:  dept.etiqueta
+        })
+      }).then(r => r.json())
+        .then(r => console.log('Push result:', r))
+        .catch(e => console.warn('Push error (no crítico):', e.message));
+
       // Escuchar cambios de estado de la sesión en tiempo real
       sesionUnsub = onSnapshot(doc(db, 'sesiones', sesionId), (snap) => {
         if (!snap.exists()) return;
