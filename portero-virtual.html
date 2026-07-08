@@ -735,6 +735,8 @@
   import { getFirestore, doc, getDoc, getDocs, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
                                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
+                                    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyCvD2dC6Fw976Bi_O2OZmhKFQ7mm1uVp40",
@@ -745,9 +747,10 @@
     appId:             "1:707107985985:web:39126f161b9bb719f904c0"
   };
 
-  const app  = initializeApp(firebaseConfig);
-  const db   = getFirestore(app);
-  const auth = getAuth(app);
+  const app     = initializeApp(firebaseConfig);
+  const db      = getFirestore(app);
+  const auth    = getAuth(app);
+  const storage = getStorage(app);
 
   // Login anónimo para poder leer/escribir Firestore
   await signInAnonymously(auth);
@@ -1008,15 +1011,30 @@
         snap.docChanges().forEach(change => {
           if (change.type === 'added') {
             const d = change.doc.data();
-            // Ignorar los mensajes propios del visitante (ya los mostramos localmente)
-            if (primero || d.de === 'resident') {
-              appendMessage(d.texto || '🎙️ Nota de audio', d.de === 'resident' ? 'resident' : 'visitor');
+            if (d.de === 'resident') {
+              // Mensaje del residente — siempre mostrar
+              if (d.tipo === 'audio' && d.url) {
+                appendAudioMessage(d.url, 'resident');
+              } else if (d.texto) {
+                appendMessage(d.texto, 'resident');
+              }
             }
+            // Mensajes propios del visitante ya se muestran localmente
           }
         });
         primero = false;
       }
     );
+  }
+
+  function appendAudioMessage(url, from) {
+    const msgs = document.getElementById('chatMessages');
+    const div  = document.createElement('div');
+    div.className = `msg msg-${from}`;
+    const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+    div.innerHTML = `<audio controls src="${url}" style="max-width:200px;border-radius:8px;"></audio><div class="msg-time">${time}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
   }
 
   function appendMessage(text, from) {
@@ -1058,15 +1076,40 @@
     }
   };
 
-  function sendAudioMessage(blob) {
+  async function sendAudioMessage(blob) {
     const msgs = document.getElementById('chatMessages');
-    const url  = URL.createObjectURL(blob);
-    const div  = document.createElement('div');
-    div.className = 'msg msg-visitor';
     const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
-    div.innerHTML = `<audio controls src="${url}" style="max-width:200px;border-radius:8px;"></audio><div class="msg-time">${time}</div>`;
+
+    // Mostrar placeholder mientras sube
+    const div = document.createElement('div');
+    div.className = 'msg msg-visitor';
+    div.innerHTML = `<span style="color:var(--plata);font-size:12px;">🎙️ Subiendo audio...</span><div class="msg-time">${time}</div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
+
+    try {
+      // Subir a Firebase Storage
+      const nombre   = `audios/${sesionId}/${Date.now()}_visitor.webm`;
+      const audioRef = storageRef(storage, nombre);
+      await uploadBytes(audioRef, blob);
+      const url = await getDownloadURL(audioRef);
+
+      // Reemplazar placeholder con el audio real
+      div.innerHTML = `<audio controls src="${url}" style="max-width:200px;border-radius:8px;"></audio><div class="msg-time">${time}</div>`;
+
+      // Guardar URL en Firestore para que el residente lo reciba
+      if (sesionId) {
+        await addDoc(collection(db, 'sesiones', sesionId, 'mensajes'), {
+          tipo:  'audio',
+          url:   url,
+          de:    'visitor',
+          ts:    serverTimestamp()
+        });
+      }
+    } catch(e) {
+      div.innerHTML = `<span style="color:var(--rojo);font-size:12px;">❌ Error al enviar audio</span><div class="msg-time">${time}</div>`;
+      console.error('Error subiendo audio:', e);
+    }
   }
 
   // ═══════════════════════════════════════════════════════
