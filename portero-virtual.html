@@ -752,8 +752,16 @@
   const auth    = getAuth(app);
   const storage = getStorage(app, 'gs://timbrear-cdc41.firebasestorage.app');
 
-  // Login anónimo para poder leer/escribir Firestore
-  await signInAnonymously(auth);
+  // Login anónimo — siempre asegurar que haya sesión activa
+  async function ensureAuth() {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+      console.log('✅ Auth anónimo renovado');
+    }
+    return auth.currentUser;
+  }
+
+  await ensureAuth();
 
   // ═══════════════════════════════════════════════════════
   //  LEER EDIFICIO DESDE URL
@@ -1107,6 +1115,10 @@
     msgs.scrollTop = msgs.scrollHeight;
 
     try {
+      // Asegurar autenticación antes de subir
+      const user = await ensureAuth();
+      console.log('Auth OK, uid:', user?.uid);
+
       console.log('Subiendo a Storage... sesionId:', sesionId);
       const nombre   = `audios/${sesionId || 'sin-sesion'}/${Date.now()}_visitor.${ext}`;
       const audioRef = storageRef(storage, nombre);
