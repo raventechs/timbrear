@@ -923,7 +923,7 @@
       sesionId = sesionRef.id;
 
       // Disparar push al residente via Netlify Function
-      fetch('/.netlify/functions/push', {
+      fetch('https://soft-surf-31ad.rgaraventa.workers.dev', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
