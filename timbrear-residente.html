@@ -901,7 +901,7 @@
   async function registrarSW() {
     if (!('serviceWorker' in navigator)) return null;
     try {
-      const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       return reg;
     } catch(e) {
       console.log('SW no disponible (normal en local):', e.message);
