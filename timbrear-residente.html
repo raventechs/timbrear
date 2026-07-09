@@ -875,11 +875,23 @@
   const storage   = getStorage(app, 'gs://timbrear-cdc41.firebasestorage.app');
 
   // Siempre asegurar sesión activa antes de operaciones
+  // Persistir sesión anónima en localStorage para no perderla
+  import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  await setPersistence(auth, browserLocalPersistence);
+
   async function ensureAuth() {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-      console.log('✅ Auth anónimo renovado (residente)');
-    }
+    if (auth.currentUser) return auth.currentUser;
+    // Si no hay usuario, esperar hasta 3 segundos a que Firebase restaure la sesión
+    await new Promise(resolve => {
+      const unsub = auth.onAuthStateChanged(user => {
+        unsub();
+        resolve(user);
+      });
+    });
+    if (auth.currentUser) return auth.currentUser;
+    // Solo si realmente no hay sesión, crear una nueva
+    await signInAnonymously(auth);
+    console.log('✅ Auth anónimo creado (residente)');
     return auth.currentUser;
   }
 
