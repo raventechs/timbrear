@@ -47,7 +47,7 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const sesionId = event.notification.data?.sesionId || "";
-  const url      = `/timbrear-residente.html?sesion=${sesionId}`;
+  const url      = `/timbrear/timbrear-residente.html?sesion=${sesionId}`;
 
   if (event.action === "rechazar") {
     // En el futuro: llamar a Firebase para marcar como rechazada
