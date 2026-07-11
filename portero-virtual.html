@@ -752,12 +752,18 @@
   const auth    = getAuth(app);
   const storage = getStorage(app, 'gs://timbrear-cdc41.firebasestorage.app');
 
-  // Login anónimo — siempre asegurar que haya sesión activa
+  // Login anónimo — persistir sesión y esperar restauración
+  import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  await setPersistence(auth, browserLocalPersistence);
+
   async function ensureAuth() {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-      console.log('✅ Auth anónimo renovado');
-    }
+    if (auth.currentUser) return auth.currentUser;
+    await new Promise(resolve => {
+      const unsub = auth.onAuthStateChanged(user => { unsub(); resolve(user); });
+    });
+    if (auth.currentUser) return auth.currentUser;
+    await signInAnonymously(auth);
+    console.log('✅ Auth anónimo creado (portero)');
     return auth.currentUser;
   }
 
@@ -1222,6 +1228,18 @@
   //  INIT
   // ═══════════════════════════════════════════════════════
   cargarEdificio();
+
+  // ── P5: logError ──────────────────────────────────────
+  async function logError(origen, mensaje, extra = {}) {
+    try {
+      await addDoc(collection(db, 'errores'), {
+        origen, mensaje,
+        extra: JSON.stringify(extra),
+        ts: serverTimestamp()
+      });
+    } catch(e) { console.error('logError failed:', e); }
+  }
+
 </script>
 
 </body>
