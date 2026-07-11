@@ -1130,10 +1130,12 @@
 
     // Actualizar Firestore en paralelo (no bloqueante)
     if (sesionActiva?.id && sesionActiva.id !== 'demo') {
-      updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' })
-        .then(() => console.log('✅ Sesión marcada como activa'))
-        .catch(e => console.warn('⚠️ No se pudo actualizar sesión (igual funciona):', e.message));
-      escucharMensajes(sesionActiva.id);
+      ensureAuth().then(() => {
+        updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' })
+          .then(() => console.log('✅ Sesión marcada como activa'))
+          .catch(e => console.warn('⚠️ No se pudo actualizar sesión (igual funciona):', e.message));
+        escucharMensajes(sesionActiva.id);
+      });
     }
   };
 
