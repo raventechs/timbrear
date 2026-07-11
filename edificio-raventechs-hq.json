@@ -1,0 +1,31 @@
+{
+  "edificio": {
+    "id": "raventechs-hq",
+    "nombre": "RavenTechs HQ",
+    "direccion": "Edificio de prueba",
+    "ciudad": "Buenos Aires",
+    "plan": "basico",
+    "estado": "activo"
+  },
+  "departamentos": [
+    { "id": "1A", "etiqueta": "1A", "piso": "1er Piso", "nombre": "Ruben Garaventa", "telefono": "", "activado": false },
+    { "id": "1B", "etiqueta": "1B", "piso": "1er Piso", "nombre": "Depto 1B", "telefono": "", "activado": false },
+    { "id": "2A", "etiqueta": "2A", "piso": "2do Piso", "nombre": "Depto 2A", "telefono": "", "activado": false },
+    { "id": "2B", "etiqueta": "2B", "piso": "2do Piso", "nombre": "Depto 2B", "telefono": "", "activado": false }
+  ],
+  "urls": {
+    "setup": "https://raventechs.github.io/timbrear/timbrear-setup.html",
+    "admin": "https://raventechs.github.io/timbrear/timbrear-admin.html",
+    "visitante": "https://raventechs.github.io/timbrear/portero-virtual.html?edificio=raventechs-hq",
+    "residente_1A": "https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=1A&deptoId=1A&nombre=Ruben&edificioNombre=RavenTechs%20HQ",
+    "residente_1B": "https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=1B&deptoId=1B&nombre=Residente1B&edificioNombre=RavenTechs%20HQ",
+    "residente_2A": "https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=2A&deptoId=2A&nombre=Residente2A&edificioNombre=RavenTechs%20HQ",
+    "residente_2B": "https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=2B&deptoId=2B&nombre=Residente2B&edificioNombre=RavenTechs%20HQ"
+  },
+  "notas": [
+    "1. Abrí el link de setup y tocá 'Cargar edificio' para crear los datos en Firebase",
+    "2. Compartí el link de residente con cada persona del depto — lo abren en su celular y activan el timbre",
+    "3. El QR del visitante va en la entrada del edificio apuntando al link del visitante",
+    "4. El admin es solo para vos — configurar deptos, ver historial"
+  ]
+}
