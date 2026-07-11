@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimbreAr — Instrucciones de instalación</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0d0d;--surface:#1a1a1a;--border:#2a2a2a;--text:#f0f0f0;--muted:#888;--gold:#c8a84b;--ok:#27ae60;--warn:#e67e22;--danger:#c0392b}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:24px 16px 60px;max-width:700px;margin:0 auto}
+.brand{font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:700;color:var(--gold);margin-bottom:4px}
+.subtitle{font-size:0.8rem;color:var(--muted);margin-bottom:32px;letter-spacing:.1em;text-transform:uppercase}
+h2{font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;color:var(--gold);margin:28px 0 12px;display:flex;align-items:center;gap:8px}
+h3{font-size:0.88rem;font-weight:700;margin:16px 0 8px;color:var(--text)}
+p{font-size:0.84rem;color:var(--muted);line-height:1.7;margin-bottom:10px}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;font-size:0.72rem;font-weight:700;margin-right:8px;flex-shrink:0}
+.step-title{font-weight:600;font-size:0.88rem;display:flex;align-items:center}
+.step-body{font-size:0.81rem;color:var(--muted);margin-top:8px;line-height:1.7;padding-left:32px}
+.url-box{background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:0.75rem;color:var(--gold);word-break:break-all;margin:8px 0;cursor:pointer;transition:background .15s}
+.url-box:hover{background:#1a1a1a}
+.url-label{font-size:0.68rem;color:var(--muted);font-family:'Inter',sans-serif;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:0.67rem;font-weight:700;margin-left:8px}
+.badge-ok{background:rgba(39,174,96,.15);color:var(--ok)}
+.badge-warn{background:rgba(230,126,34,.15);color:var(--warn)}
+.badge-pend{background:rgba(136,136,136,.15);color:var(--muted)}
+.alert{background:rgba(200,168,75,.08);border:1px solid rgba(200,168,75,.3);border-radius:10px;padding:12px 16px;font-size:0.81rem;color:var(--gold);margin:12px 0;line-height:1.6}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0}
+.estado-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.estado-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:0.78rem}
+.estado-label{color:var(--muted);font-size:0.68rem;margin-bottom:2px}
+.estado-val{font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="brand">TimbreAr</div>
+<div class="subtitle">Guía de instalación y uso — v1.0</div>
+
+<h2>🏗️ Arquitectura del sistema</h2>
+<p>TimbreAr tiene 4 componentes que trabajan juntos:</p>
+<div class="step">
+  <div class="step-title"><span class="step-num">1</span> Portero virtual (visitante)</div>
+  <div class="step-body">QR en la entrada del edificio. El visitante escanea → ve los deptos → toca el que quiere → el residente recibe la llamada.</div>
+</div>
+<div class="step">
+  <div class="step-title"><span class="step-num">2</span> App del residente</div>
+  <div class="step-body">Cada residente tiene un link único. Lo abre en su celular, activa el timbre y acepta las notificaciones. Cuando el visitante toca → suena en el celular aunque esté cerrado.</div>
+</div>
+<div class="step">
+  <div class="step-title"><span class="step-num">3</span> Cloudflare Worker</div>
+  <div class="step-body">Función serverless que recibe el aviso del portero y manda el push al celular del residente via Firebase Cloud Messaging (FCM).</div>
+</div>
+<div class="step">
+  <div class="step-title"><span class="step-num">4</span> Consola Admin</div>
+  <div class="step-body">Panel para el administrador del edificio. Crea deptos, genera los links de los residentes, ve el historial de llamadas.</div>
+</div>
+
+<hr class="divider">
+
+<h2>🚀 Instalación — primera vez</h2>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">1</span> Cargar el edificio en Firebase</div>
+  <div class="step-body">
+    Abrí el setup en el browser y tocá el botón. Solo se hace una vez.
+    <div class="url-label">Setup URL</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-setup.html</div>
+    ⚠️ Abrilo desde HTTPS (no en local). Al tocarlo carga el edificio "RavenTechs HQ" con 4 deptos en Firebase.
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">2</span> Configurar el Cloudflare Worker</div>
+  <div class="step-body">
+    El Worker <code>soft-surf-31ad.rgaraventa.workers.dev</code> ya está deployado con CORS y lógica de push.<br><br>
+    Variable de entorno configurada: <code>FIREBASE_SERVICE_ACCOUNT</code> ✅
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">3</span> Activar cada residente</div>
+  <div class="step-body">
+    Cada residente abre su link en el celular → toca "Activar timbre" → acepta las notificaciones. Solo se hace una vez por celular.<br><br>
+    <div class="url-label">Residente Depto 1A (Ruben)</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=1A&deptoId=1A&nombre=Ruben&edificioNombre=RavenTechs%20HQ</div>
+    <div class="url-label">Residente Depto 1B</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=1B&deptoId=1B&nombre=Residente1B&edificioNombre=RavenTechs%20HQ</div>
+    <div class="url-label">Residente Depto 2A</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=2A&deptoId=2A&nombre=Residente2A&edificioNombre=RavenTechs%20HQ</div>
+    <div class="url-label">Residente Depto 2B</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-residente.html?edificio=raventechs-hq&depto=2B&deptoId=2B&nombre=Residente2B&edificioNombre=RavenTechs%20HQ</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">4</span> QR para la entrada</div>
+  <div class="step-body">
+    Generá un QR con cualquier generador online apuntando a esta URL y pegalo en la entrada:
+    <div class="url-label">URL Visitante</div>
+    <div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/portero-virtual.html?edificio=raventechs-hq</div>
+    Generador QR gratuito: <a href="https://qr.io" target="_blank" style="color:var(--gold)">qr.io</a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<h2>🧪 Cómo probar</h2>
+
+<div class="step">
+  <div class="step-title">Prueba con dos celulares</div>
+  <div class="step-body">
+    <b>Celular 1 (residente):</b> Abrís el link del depto 1A, activás el timbre, aceptás las notificaciones. <b>Cerrás la app completamente.</b><br><br>
+    <b>Celular 2 (visitante):</b> Abrís el link del visitante, tocás el depto 1A.<br><br>
+    <b>Resultado esperado:</b> El celular 1 recibe una notificación push aunque la app esté cerrada. Tocás la notificación → se abre la app → podés atender con audio y texto.
+  </div>
+</div>
+
+<hr class="divider">
+
+<h2>📊 Estado del sistema</h2>
+
+<div class="estado-grid">
+  <div class="estado-item"><div class="estado-label">Llamadas en tiempo real</div><div class="estado-val" style="color:var(--ok)">✅ Funciona</div></div>
+  <div class="estado-item"><div class="estado-label">Audio bidireccional</div><div class="estado-val" style="color:var(--ok)">✅ Funciona</div></div>
+  <div class="estado-item"><div class="estado-label">Mensajes de texto</div><div class="estado-val" style="color:var(--ok)">✅ Funciona</div></div>
+  <div class="estado-item"><div class="estado-label">Push app cerrada</div><div class="estado-val" style="color:var(--warn)">⚠️ Probar</div></div>
+  <div class="estado-item"><div class="estado-label">Sonido personalizado</div><div class="estado-val" style="color:var(--warn)">⚠️ Pendiente Xiaomi</div></div>
+  <div class="estado-item"><div class="estado-label">QR entrada</div><div class="estado-val" style="color:var(--warn)">⚠️ Generar</div></div>
+</div>
+
+<hr class="divider">
+
+<h2>⚙️ Admin</h2>
+<div class="url-label">Consola admin (solo para vos)</div>
+<div class="url-box" onclick="navigator.clipboard.writeText(this.textContent)">https://raventechs.github.io/timbrear/timbrear-admin.html</div>
+
+<div class="alert">
+  💡 Tocá cualquier URL para copiarla al portapapeles
+</div>
+
+<h2>🐛 Bugs conocidos</h2>
+<div class="step">
+  <div class="step-title">Permission-denied en snapshot listener</div>
+  <div class="step-body">Al atender una llamada, a veces Firestore rechaza el listener del chat. Causa: el auth anónimo se renueva con un UID diferente entre el inicio y el momento de atender. Fix aplicado: <code>ensureAuth()</code> antes de <code>escucharMensajes()</code>. Verificar si persiste.</div>
+</div>
+<div class="step">
+  <div class="step-title">SW no activo en push background</div>
+  <div class="step-body">El Service Worker de Firebase Messaging a veces no se registra correctamente. Solución manual: F12 → Application → Service Workers → Unregister → recargar. Fix permanente: pendiente de investigar.</div>
+</div>
+<div class="step">
+  <div class="step-title">Sonido bajo en Xiaomi MIUI</div>
+  <div class="step-body">Las notificaciones push usan el sonido del sistema que en MIUI es muy bajo. Solución: usar sonido personalizado en el SW. El archivo <code>notification-timbre.mp3</code> ya está subido. Pendiente conectar al canal de notificaciones de Android.</div>
+</div>
+
+</body>
+</html>
