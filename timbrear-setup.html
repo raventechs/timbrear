@@ -146,11 +146,11 @@
   // ══════════════════════════════════════════
   //  DATOS DEL EDIFICIO DE PRUEBA
   // ══════════════════════════════════════════
-  const EDIFICIO_ID = "demo";
+  const EDIFICIO_ID = "raventechs-hq"; // cambiá "demo" por el ID que quieras
 
   const EDIFICIO = {
-    nombre:    "Edificio Demo",
-    direccion: "Av. Corrientes 1234, CABA",
+    nombre:    "RavenTechs HQ",
+    direccion: "Edificio de prueba",
     ciudad:    "Buenos Aires",
     plan:      "basico",
     estado:    "activo",
@@ -226,8 +226,8 @@
     const base    = window.location.origin;
     const result  = document.getElementById('urlsResult');
 
-    const visitante  = `${base}/portero-virtual.html?edificio=demo`;
-    const residente  = `${base}/timbrear-residente.html?edificio=demo&depto=2B&deptoId=2B&nombre=Juan&edificioNombre=Edificio%20Demo`;
+    const visitante  = `${base}/portero-virtual.html?edificio=${EDIFICIO_ID}`;
+    const residente  = `${base}/timbrear-residente.html?edificio=${EDIFICIO_ID}&depto=1A&deptoId=1A&nombre=Ruben&edificioNombre=${encodeURIComponent(EDIFICIO.nombre)}`;
     const admin      = `${base}/timbrear-admin.html`;
 
     result.innerHTML = `
