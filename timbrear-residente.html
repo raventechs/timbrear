@@ -1137,20 +1137,21 @@
   // ═══════════════════════════════════════════════════════
   window.atenderLlamada = async () => {
     detenerTimbre();
-    // Ir al chat INMEDIATAMENTE sin esperar Firestore
+    // Ir al chat INMEDIATAMENTE
     document.getElementById('chat-depto-ref').textContent = deptoParam;
     const msgs = document.getElementById('chatMsgs');
     msgs.innerHTML = `<div class="msg msg-system">Llamada conectada · Depto ${deptoParam}</div>`;
     showScreen('screen-chat-residente');
 
-    // Actualizar Firestore en paralelo (no bloqueante)
     if (sesionActiva?.id && sesionActiva.id !== 'demo') {
+      const sesId = sesionActiva.id;
+      // Escuchar mensajes INMEDIATAMENTE sin esperar auth
+      escucharMensajes(sesId);
+      // Actualizar estado en paralelo
       ensureAuth().then(() => {
-        updateDoc(doc(db, 'sesiones', sesionActiva.id), { estado: 'activa' })
-          .then(() => console.log('✅ Sesión marcada como activa'))
-          .catch(e => console.warn('⚠️ No se pudo actualizar sesión (igual funciona):', e.message));
-        escucharMensajes(sesionActiva.id);
-      });
+        updateDoc(doc(db, 'sesiones', sesId), { estado: 'activa' })
+          .catch(e => console.warn('No se pudo actualizar sesión:', e.message));
+      }).catch(e => console.warn('Auth error:', e.message));
     }
   };
 
