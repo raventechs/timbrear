@@ -1044,6 +1044,7 @@
   }
 
   function recibirLlamada(sesion) {
+    detenerTimbre(); // detener timbre anterior si hubiera
     sesionActiva = sesion;
     document.getElementById('timbre-edificio').textContent = sesion.edificioNombre || edificioNombreParam;
     document.getElementById('notif-sub').textContent = `Depto ${deptoParam} · ${sesion.edificioNombre || edificioNombreParam}`;
@@ -1063,10 +1064,11 @@
 
     setTimeout(() => {
       if (document.getElementById('notifOverlay').classList.contains('show')) {
+        detenerTimbre();
         ocultarNotificacion();
         showScreen('screen-timbre');
       }
-    }, 4000);
+    }, 40000);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -1080,23 +1082,29 @@
     reproducirTimbre();
     setTimeout(() => {
       if (document.getElementById('notifOverlay').classList.contains('show')) {
+        detenerTimbre();
         ocultarNotificacion();
         showScreen('screen-timbre');
       }
-    }, 4000);
+    }, 40000);
   };
 
   // ═══════════════════════════════════════════════════════
   //  NOTIFICACIÓN VISUAL
   // ═══════════════════════════════════════════════════════
   function mostrarNotificacion() { document.getElementById('notifOverlay').classList.add('show'); }
-  function ocultarNotificacion() { document.getElementById('notifOverlay').classList.remove('show'); }
+  function ocultarNotificacion() {
+    document.getElementById('notifOverlay').classList.remove('show');
+    detenerTimbre();
+    sesionActiva = null; // resetear para permitir nueva llamada
+  }
   window.irATimbre = () => { ocultarNotificacion(); showScreen('screen-timbre'); };
 
   // ═══════════════════════════════════════════════════════
   //  SONIDO DING DONG
   // ═══════════════════════════════════════════════════════
-  function reproducirTimbre() {
+  let _ringInterval = null;
+  function _tocarUnaVez() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const tocar = (freq, t, dur) => {
@@ -1106,22 +1114,29 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
         gain.gain.setValueAtTime(0, ctx.currentTime + t);
-        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + t + 0.02);
+        gain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + t + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + dur);
         osc.start(ctx.currentTime + t);
         osc.stop(ctx.currentTime + t + dur);
       };
       tocar(880, 0,    0.35);
       tocar(659, 0.38, 0.5);
-      tocar(880, 1.1,  0.35);
-      tocar(659, 1.48, 0.5);
     } catch(e) { console.log('Audio no disponible'); }
+  }
+  function reproducirTimbre() {
+    _tocarUnaVez();
+    if (_ringInterval) clearInterval(_ringInterval);
+    _ringInterval = setInterval(_tocarUnaVez, 2000);
+  }
+  function detenerTimbre() {
+    if (_ringInterval) { clearInterval(_ringInterval); _ringInterval = null; }
   }
 
   // ═══════════════════════════════════════════════════════
   //  ATENDER / RECHAZAR
   // ═══════════════════════════════════════════════════════
   window.atenderLlamada = async () => {
+    detenerTimbre();
     // Ir al chat INMEDIATAMENTE sin esperar Firestore
     document.getElementById('chat-depto-ref').textContent = deptoParam;
     const msgs = document.getElementById('chatMsgs');
