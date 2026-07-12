@@ -1243,6 +1243,14 @@
     } catch(e) { console.error('logError failed:', e); }
   }
 
+
+  // P3: Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/timbrear/sw-timbrear.js')
+      .then(() => console.log('SW TimbreAR registrado'))
+      .catch(e => console.warn('SW error:', e));
+  }
+
 </script>
 
 </body>
