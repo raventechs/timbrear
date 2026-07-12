@@ -1096,7 +1096,7 @@
   function ocultarNotificacion() {
     document.getElementById('notifOverlay').classList.remove('show');
     detenerTimbre();
-    sesionActiva = null; // resetear para permitir nueva llamada
+    // NO borrar sesionActiva acá — atenderLlamada la necesita
   }
   window.irATimbre = () => { ocultarNotificacion(); showScreen('screen-timbre'); };
 
