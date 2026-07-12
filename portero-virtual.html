@@ -1025,6 +1025,7 @@
         // Garantizar auth antes de escribir en Firestore
         await ensureAuth();
         await addDoc(collection(db, 'sesiones', sesionId, 'mensajes'), {
+          tipo:  'texto',
           texto: text,
           de:    'visitor',
           ts:    serverTimestamp()
