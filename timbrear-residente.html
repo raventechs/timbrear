@@ -1124,9 +1124,9 @@
     } catch(e) { console.log('Audio no disponible'); }
   }
   function reproducirTimbre() {
-    _tocarUnaVez();
+    reproducirSonidoMP3();
     if (_ringInterval) clearInterval(_ringInterval);
-    _ringInterval = setInterval(_tocarUnaVez, 2000);
+    _ringInterval = setInterval(reproducirSonidoMP3, 2000);
   }
   function detenerTimbre() {
     if (_ringInterval) { clearInterval(_ringInterval); _ringInterval = null; }
@@ -1354,6 +1354,40 @@
         ts: serverTimestamp()
       });
     } catch(e) { console.error('logError failed:', e); }
+  }
+
+
+  // ── Enviar texto del residente al visitante ──────────
+  window.enviarMensaje = async function() {
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if (!text || !sesionActiva?.id || sesionActiva.id === 'demo') return;
+    input.value = '';
+    agregarMensaje(text, 'resident');
+    try {
+      await ensureAuth();
+      await addDoc(collection(db, 'sesiones', sesionActiva.id, 'mensajes'), {
+        tipo:  'texto',
+        texto: text,
+        de:    'resident',
+        ts:    serverTimestamp()
+      });
+    } catch(e) {
+      logError('enviarMensaje', e.message);
+      console.error('Error enviando mensaje residente:', e);
+    }
+  };
+
+  // ── Sonido mp3 para la llamada entrante ──────────────
+  function reproducirSonidoMP3() {
+    try {
+      const audio = new Audio('https://raventechs.github.io/notification-timbre.mp3');
+      audio.volume = 1.0;
+      audio.play().catch(() => {
+        // Si falla el mp3, usar el tono generado
+        _tocarUnaVez();
+      });
+    } catch(e) { _tocarUnaVez(); }
   }
 
 </script>
