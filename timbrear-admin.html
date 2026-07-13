@@ -569,13 +569,16 @@
       <div class="nav-item" onclick="showView('activaciones')">
         <span class="icon">📱</span> Activaciones
       </div>
+      <div class="nav-item" onclick="showView('historial-visitas')">
+        <span class="icon">📋</span> Historial visitas
+      </div>
       <div class="nav-item" onclick="showView('qr')">
         <span class="icon">⬛</span> Códigos QR
       </div>
     </nav>
     <div class="sidebar-footer">
       <strong>TimbreAr</strong><br>
-      v1.0 · Panel interno
+      v1.1 · Panel interno
     </div>
   </aside>
 
@@ -761,6 +764,23 @@
             <div class="empty-icon">📱</div>
             <div class="empty-title">Sin datos de activación</div>
             <div class="empty-sub">Guardá un edificio con departamentos para ver el estado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ HISTORIAL VISITAS ══ -->
+      <div class="view" id="view-historial-visitas">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Historial de visitas</div>
+            <div class="section-sub">Últimas 50 llamadas registradas en todos los edificios</div>
+          </div>
+          <button class="btn btn-outline" onclick="renderHistorialVisitas()">🔄 Actualizar</button>
+        </div>
+        <div class="table-wrap" id="historial-visitas-table">
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">Seleccioná esta sección para cargar</div>
           </div>
         </div>
       </div>
@@ -1279,6 +1299,44 @@ function showToast(msg, type = 'success') {
 //  INIT
 // ═══════════════════════════════════════════════════════
 renderDashboard();
+
+// ═══════════════════════════════════════════════════════
+//  HISTORIAL DE VISITAS — lee colección 'sesiones'
+// ═══════════════════════════════════════════════════════
+async function renderHistorialVisitas() {
+  const cont = document.getElementById('historial-visitas-table');
+  if (!cont) return;
+  cont.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Cargando...</div></div>';
+  try {
+    const { collection, query, orderBy, limit, getDocs } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(query(collection(db, 'sesiones'), orderBy('creadaEn', 'desc'), limit(50)));
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    if (!items.length) {
+      cont.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Sin visitas registradas</div></div>';
+      return;
+    }
+    const estadoLabel = { llamando:'📞 Llamando', finalizada:'✅ Atendida', rechazada:'❌ Rechazada', perdida:'⚠️ Perdida' };
+    cont.innerHTML = `<table>
+      <thead><tr><th>Fecha</th><th>Edificio</th><th>Depto</th><th>Estado</th><th>Foto</th></tr></thead>
+      <tbody>
+        ${items.map(s => {
+          const fecha = s.creadaEn?.toDate ? s.creadaEn.toDate().toLocaleString('es-AR', { dateStyle:'short', timeStyle:'short' }) : '—';
+          const est = estadoLabel[s.estado] || s.estado || '—';
+          const foto = s.fotoUrl ? `<img src="${s.fotoUrl}" style="width:48px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #444;">` : '—';
+          return `<tr><td>${fecha}</td><td>${s.edificioNombre||'—'}</td><td>${s.deptoId||'—'}</td><td>${est}</td><td>${foto}</td></tr>`;
+        }).join('')}
+      </tbody></table>`;
+  } catch(e) {
+    cont.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Error: ${e.message}</div></div>`;
+  }
+}
+
+const _showViewOrig = showView;
+window.showView = function(id) {
+  _showViewOrig(id);
+  if (id === 'historial-visitas') renderHistorialVisitas();
+};
 </script>
 </body>
 </html>
