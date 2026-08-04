@@ -3,7 +3,7 @@
   "short_name": "TimbreAR",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAFAFA",
+  "background_color": "#FFFFFF",
   "theme_color": "#F39C12",
   "lang": "es",
   "icons": [
