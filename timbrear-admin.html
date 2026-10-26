@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- TimbreAr Admin 1.1 — 2026-10-26 — BACKUP (no tenía): automático diario + manual + restaurar en el Dashboard. -->
   <title>TimbreAr — Consola Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
@@ -633,6 +634,18 @@
             <div class="empty-sub">Creá el primer edificio para empezar</div>
           </div>
         </div>
+      <div class="section-header" style="margin-top:28px">
+          <div>
+            <div class="section-title">💾 Backup de datos</div>
+            <div class="section-sub">Los edificios de esta consola se guardan solo en este navegador. Se baja una copia sola una vez por día al abrirla; también podés bajarla cuando quieras o restaurar una anterior.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-gold" onclick="generarBackup(false)">📥 Descargar backup ahora</button>
+          <button class="btn btn-outline" onclick="document.getElementById('inputRestaurarBackup').click()">📤 Restaurar desde un archivo</button>
+          <input type="file" id="inputRestaurarBackup" accept=".json,application/json" style="display:none" onchange="restaurarBackup(this)">
+          <span class="section-sub">Último backup: <span id="ultimoBackupFecha">—</span></span>
+        </div>
       </div>
 
       <!-- ══ LISTA EDIFICIOS ══ -->
@@ -862,6 +875,74 @@
 </div>
 
 <script>
+// ══════════ BACKUP ESTÁNDAR 1.1 ══════════
+// Los edificios de esta consola viven SOLO en este navegador (localStorage). Por eso el backup es doblemente importante:
+// automático una vez por día al abrir la consola (baja un JSON y deja copia en IndexedDB), manual y restaurar desde la tarjeta del Dashboard.
+const BK_APP = 'TimbreAr', BK_VER = '1.1', BK_LS = 'timbrear-ultimo-backup', BK_KEY = 'timbrear_edificios';
+function _bkHoy() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _bkLeerLocal() { try { const v = JSON.parse(localStorage.getItem(BK_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+function _bkIdb(fecha, json) {
+  return new Promise(function (res) {
+    try {
+      const rq = indexedDB.open('timbrear-backup', 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore('b', { keyPath: 'fecha' }); };
+      rq.onsuccess = function () {
+        const idb = rq.result, tx = idb.transaction('b', 'readwrite'), st = tx.objectStore('b');
+        st.put({ fecha: fecha, json: json });
+        st.getAllKeys().onsuccess = function (e) { const ks = e.target.result.sort(); while (ks.length > 7) st.delete(ks.shift()); };
+        tx.oncomplete = function () { idb.close(); res(true); }; tx.onerror = function () { res(false); };
+      };
+      rq.onerror = function () { res(false); };
+    } catch (e) { res(false); }
+  });
+}
+function _bkDescargar(json, fecha) {
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'timbrear-backup-' + fecha + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+async function generarBackup(silencioso) {
+  try {
+    const lista = _bkLeerLocal();
+    if (!lista.length) { if (!silencioso) showToast('Todavía no hay edificios para respaldar', 'error'); return; }
+    const fecha = _bkHoy();
+    const json = JSON.stringify({ app: BK_APP, version: BK_VER, fecha: new Date().toISOString(), edificios: lista });
+    _bkDescargar(json, fecha);
+    await _bkIdb(fecha, json);
+    try { localStorage.setItem(BK_LS, fecha); } catch (e) {}
+    const el = document.getElementById('ultimoBackupFecha'); if (el) el.textContent = fecha;
+    if (!silencioso) showToast('✅ Backup descargado');
+  } catch (e) { console.warn('generarBackup', e); if (!silencioso) showToast('Error al generar backup: ' + e.message, 'error'); }
+}
+async function restaurarBackup(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    const bk = JSON.parse(await file.text());
+    if (bk.app !== BK_APP || !Array.isArray(bk.edificios)) { showToast('El archivo no es un backup de TimbreAr', 'error'); return; }
+    const ids = {}; bk.edificios.forEach(function (e) { if (e && e.id) ids[e.id] = e; });
+    const nuevos = Object.keys(ids).map(function (k) { return ids[k]; });
+    if (!nuevos.length) { showToast('El backup no tiene edificios', 'error'); return; }
+    if (!confirm('Se van a cargar ' + nuevos.length + ' edificio(s) del archivo. Los que ya existen con el mismo código se reemplazan por los del archivo; los demás quedan como están. ¿Continuar?')) return;
+    const actual = _bkLeerLocal().filter(function (e) { return !ids[e.id]; });
+    edificios = actual.concat(nuevos);
+    localStorage.setItem(BK_KEY, JSON.stringify(edificios));
+    showToast('✅ Backup restaurado (' + nuevos.length + ' edificio/s)');
+    renderDashboard();
+  } catch (e) { console.warn('restaurarBackup', e); showToast('Error al restaurar: ' + e.message, 'error'); }
+  finally { input.value = ''; }
+}
+function chequearBackupDiario() {
+  let ultimo = null; try { ultimo = localStorage.getItem(BK_LS); } catch (e) {}
+  const el = document.getElementById('ultimoBackupFecha'); if (el && ultimo) el.textContent = ultimo;
+  if (!_bkLeerLocal().length) return;
+  if (ultimo !== _bkHoy()) setTimeout(function () { generarBackup(true); }, 5000);
+}
+// ══════════ FIN BACKUP ══════════
+
 // ═══════════════════════════════════════════════════════
 //  ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════
@@ -1299,6 +1380,7 @@ function showToast(msg, type = 'success') {
 //  INIT
 // ═══════════════════════════════════════════════════════
 renderDashboard();
+chequearBackupDiario();
 
 // ═══════════════════════════════════════════════════════
 //  HISTORIAL DE VISITAS — lee colección 'sesiones'
