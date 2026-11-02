@@ -50,6 +50,11 @@
   const $ = id => document.getElementById(id);
   const log = (t, c = 'inf') => { const d = document.createElement('div'); d.className = c; d.textContent = t; $('log').appendChild(d); };
 
+  // La ventana de Google no vuelve bien cuando la página corre dentro de la app instalada (modo pantalla completa)
+  const enApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (enApp) log('⚠️ Estás dentro de la app instalada. El ingreso con Google no vuelve acá: abrí esta misma dirección desde el navegador Chrome (pegala en la barra de direcciones) y probá de nuevo.', 'err');
+  if (sessionStorage.getItem('dir_intento')) { sessionStorage.removeItem('dir_intento'); log('Volviste de Google pero sin sesión iniciada.', 'err'); }
+
   let admin = false;
   onAuthStateChanged(auth, u => {
     admin = !!(u && u.email && u.email.toLowerCase() === 'rgaraventa@gmail.com');
@@ -59,8 +64,15 @@
   });
 
   $('btnLogin').onclick = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch (e) { log('No se pudo ingresar con Google: ' + (e.code || e.message), 'err'); }
+    try {
+      sessionStorage.setItem('dir_intento', '1');
+      log('Abriendo Google…');
+      const r = await signInWithPopup(auth, new GoogleAuthProvider());
+      sessionStorage.removeItem('dir_intento');
+      log('Google devolvió la cuenta: ' + (r.user.email || 'sin correo'), 'ok');
+    }
+    catch (e) {
+      sessionStorage.removeItem('dir_intento'); log('No se pudo ingresar con Google: ' + (e.code || e.message), 'err'); }
   };
 
   $('btnRun').onclick = async () => {
