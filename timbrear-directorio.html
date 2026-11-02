@@ -70,6 +70,8 @@
       if (auth.currentUser) { await signOut(auth); log('(se cerró la sesión anónima del timbre)'); }
       log('Abriendo Google…');
       const prov = new GoogleAuthProvider();
+      prov.addScope('email');
+      prov.addScope('profile');
       prov.setCustomParameters({ prompt: 'select_account' });
       const r = await signInWithPopup(auth, prov);
       sessionStorage.removeItem('dir_intento');
