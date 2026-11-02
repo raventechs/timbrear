@@ -61,6 +61,12 @@
     const mail = correoDe(u).toLowerCase();
     admin = mail === 'rgaraventa@gmail.com';
     $('btnRun').disabled = !admin;
+    if (u && !u.isAnonymous) {
+      u.getIdTokenResult(true).then(t => {
+        const c = t.claims || {};
+        log('Token: correo=' + (c.email || 'SIN CORREO') + ' · verificado=' + c.email_verified + ' · uid=' + u.uid, c.email && c.email_verified ? 'ok' : 'err');
+      }).catch(() => {});
+    }
     if (u && admin) { $('btnLogin').textContent = '✓ Ingresaste como ' + mail; log('Listo: ya podés armar el directorio.', 'ok'); }
     else if (u && mail) { log('Esta cuenta (' + mail + ') no es la del administrador. Ingresá con rgaraventa@gmail.com.', 'err'); }
   });
