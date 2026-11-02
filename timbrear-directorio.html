@@ -28,11 +28,15 @@
 
 <button id="btnLogin">1 · Ingresar con Google</button>
 <button id="btnRun" disabled>2 · Armar directorio</button>
+
+<label for="lista" style="margin-top:26px">O armarlo con una lista (no necesita Google)</label>
+<input id="lista" value="1A,1B,1C,2A,2B,2C,3A,3B,3C" autocapitalize="characters" autocomplete="off">
+<button id="btnLista" class="sec">3 · Armar con esta lista</button>
 <div id="log"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInAnonymously }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, getDocs, setDoc, doc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -92,6 +96,37 @@
     }
     catch (e) {
       sessionStorage.removeItem('dir_intento'); log('No se pudo ingresar con Google: ' + (e.code || e.message), 'err'); }
+  };
+
+  // Armar con una lista escrita: crea solo documentos nuevos con número de depto y piso; sirve con sesión anónima
+  const inferirPiso = et => {
+    const n = parseInt(et, 10);
+    if (isNaN(n)) return 'Planta Baja';
+    return n + (['er','do','er','to','to','to','mo','vo','no','mo'][n - 1] || 'mo') + ' Piso';
+  };
+  $('btnLista').onclick = async () => {
+    const eid = $('eid').value.trim().replace(/[^A-Za-z0-9_-]+$/, '');
+    const items = [...new Set($('lista').value.split(/[,\s;]+/).map(x => x.trim().toUpperCase()).filter(Boolean))];
+    if (!eid || !items.length) { log('Escribí el edificio y al menos un departamento.', 'err'); return; }
+    $('btnLista').disabled = true;
+    try {
+      if (!auth.currentUser) await signInAnonymously(auth);
+      let ok = 0, ya = 0;
+      for (const et of items) {
+        try {
+          await setDoc(doc(db, 'edificios', eid, 'directorio', et), { etiqueta: et, piso: inferirPiso(et) });
+          log('  ' + et + ' — ' + inferirPiso(et), 'inf'); ok++;
+        } catch (e) {
+          if (e.code === 'permission-denied') { log('  ' + et + ' — ya existía, queda como está', 'inf'); ya++; }
+          else throw e;
+        }
+      }
+      log('✅ Listo: ' + ok + ' departamentos nuevos' + (ya ? ' (' + ya + ' ya existían)' : '') + '.', 'ok');
+      log('Ahora abrí el timbre: portero-virtual.html?edificio=' + eid, 'inf');
+    } catch (e) {
+      log('Error: ' + (e.code || e.message), 'err');
+    }
+    $('btnLista').disabled = false;
   };
 
   $('btnRun').onclick = async () => {
