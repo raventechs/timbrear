@@ -774,7 +774,7 @@
   //  FIREBASE — SDK
   // ═══════════════════════════════════════════════════════
   import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, getDocs, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, getDocs, setDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp }
                                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
@@ -848,27 +848,36 @@
         CONFIG.edificio = { nombre: data.nombre, direccion: data.direccion || "" };
       }
 
-      // 2 — Leer departamentos desde la SUBCOLECCIÓN
-      const deptosSnap = await getDocs(
-        collection(db, 'edificios', edificioId, 'departamentos')
-      );
-
-      if (deptosSnap.empty) {
-        console.warn('Sin departamentos en Firestore');
-        CONFIG.departamentos = [];
-      } else {
-        CONFIG.departamentos = [];
-        deptosSnap.forEach(d => {
-          const data = d.data();
-          CONFIG.departamentos.push({
-            id:       d.id,
-            etiqueta: data.etiqueta || d.id,
-            piso:     data.piso     || inferirPiso(data.etiqueta || d.id)
-          });
+      // 2 — Leer el DIRECTORIO público (solo número de depto y piso; sin nombres, teléfonos ni tokens)
+      CONFIG.departamentos = [];
+      const dirSnap = await getDocs(collection(db, 'edificios', edificioId, 'directorio'));
+      dirSnap.forEach(d => {
+        const data = d.data();
+        CONFIG.departamentos.push({
+          id:       d.id,
+          etiqueta: data.etiqueta || d.id,
+          piso:     data.piso     || inferirPiso(data.etiqueta || d.id)
         });
-        // Ordenar por etiqueta (1A, 1B, 2A, etc.)
-        CONFIG.departamentos.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta));
+      });
+
+      // 2b — Edificios cargados antes del directorio: se arma una sola vez con lo público (etiqueta y piso).
+      //      No modifica ni borra nada de los departamentos.
+      if (!CONFIG.departamentos.length) {
+        try {
+          const viejos = await getDocs(collection(db, 'edificios', edificioId, 'departamentos'));
+          for (const d of viejos.docs) {
+            const data = d.data();
+            const item = { id: d.id, etiqueta: data.etiqueta || d.id, piso: data.piso || inferirPiso(data.etiqueta || d.id) };
+            CONFIG.departamentos.push(item);
+            setDoc(doc(db, 'edificios', edificioId, 'directorio', d.id), { etiqueta: item.etiqueta, piso: item.piso }, { merge: true }).catch(() => {});
+          }
+        } catch (e) {
+          console.warn('Sin directorio ni acceso al listado anterior:', e.message);
+        }
       }
+      if (!CONFIG.departamentos.length) console.warn('Sin departamentos para mostrar');
+      // Ordenar por etiqueta (1A, 1B, 2A, etc.)
+      CONFIG.departamentos.sort((a, b) => a.etiqueta.localeCompare(b.etiqueta));
 
       document.getElementById('edificioNombre').textContent = CONFIG.edificio.nombre;
       renderDepartamentos();

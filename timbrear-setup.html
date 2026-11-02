@@ -199,6 +199,12 @@
             creadoEn:  serverTimestamp()
           }
         );
+        // Directorio público: solo lo que ve la visita (número de depto y piso)
+        await setDoc(
+          doc(db, "edificios", EDIFICIO_ID, "directorio", depto.id),
+          { etiqueta: depto.etiqueta, piso: depto.piso },
+          { merge: true }
+        );
         log("ok", `  ✅ Depto ${depto.etiqueta} — ${depto.piso}`);
       }
 
