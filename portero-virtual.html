@@ -817,6 +817,8 @@
   // ═══════════════════════════════════════════════════════
   const params     = new URLSearchParams(window.location.search);
   const edificioId = params.get('edificio') || 'demo';
+  // Sin edificio en el link no hay nada para mostrar: se manda a la demo guiada
+  if (!params.get('edificio')) { location.replace('/demo.html'); }
 
   let CONFIG = {
     edificio:      { nombre: "Cargando...", direccion: "" },
@@ -924,6 +926,11 @@
     document.getElementById('edificioNombre').textContent  = CONFIG.edificio.nombre;
     document.getElementById('edificioNombre2').textContent = CONFIG.edificio.nombre.toUpperCase();
     wrap.innerHTML = '';
+
+    if (!CONFIG.departamentos.length) {
+      wrap.innerHTML = '<p style="text-align:center;color:var(--plata);padding:40px 24px;line-height:1.5">Este edificio todavía no tiene departamentos cargados.<br>Avisale al administrador.</p>';
+      return;
+    }
 
     const pisos = {};
     CONFIG.departamentos.forEach(d => {
