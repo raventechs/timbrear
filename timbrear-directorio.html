@@ -32,7 +32,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getFirestore, collection, getDocs, setDoc, doc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -66,10 +66,15 @@
   $('btnLogin').onclick = async () => {
     try {
       sessionStorage.setItem('dir_intento', '1');
+      // Se cierra la sesión anónima que dejó el timbre antes de ingresar con Google
+      if (auth.currentUser) { await signOut(auth); log('(se cerró la sesión anónima del timbre)'); }
       log('Abriendo Google…');
-      const r = await signInWithPopup(auth, new GoogleAuthProvider());
+      const prov = new GoogleAuthProvider();
+      prov.setCustomParameters({ prompt: 'select_account' });
+      const r = await signInWithPopup(auth, prov);
       sessionStorage.removeItem('dir_intento');
-      log('Google devolvió la cuenta: ' + (r.user.email || 'sin correo'), 'ok');
+      const pd = (r.user.providerData || []).map(p => p.providerId + ':' + (p.email || '-')).join(', ') || 'ninguno';
+      log('Google devolvió: correo=' + (r.user.email || 'sin correo') + ' · anónimo=' + r.user.isAnonymous + ' · proveedores=' + pd, 'ok');
     }
     catch (e) {
       sessionStorage.removeItem('dir_intento'); log('No se pudo ingresar con Google: ' + (e.code || e.message), 'err'); }
