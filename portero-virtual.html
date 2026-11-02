@@ -816,7 +816,8 @@
   //  URL esperada: index.html?edificio=EDIFICIO_ID
   // ═══════════════════════════════════════════════════════
   const params     = new URLSearchParams(window.location.search);
-  const edificioId = params.get('edificio') || 'demo';
+  // Se descartan signos al final del id (por ejemplo un punto que quedó pegado al copiar el link)
+  const edificioId = (params.get('edificio') || 'demo').trim().replace(/[^A-Za-z0-9_-]+$/, '');
   // Sin edificio en el link no hay nada para mostrar: se manda a la demo guiada
   if (!params.get('edificio')) { location.replace('/demo.html'); }
 

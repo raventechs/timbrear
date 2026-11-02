@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>TimbreAR — Armar directorio</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0d0d0d;color:#f0f0f0;padding:22px;max-width:520px;margin:0 auto}
+  h1{font-size:20px;margin-bottom:6px}h1 span{color:#c8a84b}
+  p.s{color:#8a8a8a;font-size:14px;line-height:1.4;margin-bottom:18px}
+  label{display:block;font-size:12px;color:#8a8a8a;text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px}
+  input{width:100%;background:#232323;border:1px solid #333;border-radius:10px;padding:12px;color:#f0f0f0;font-size:15px}
+  button{width:100%;margin-top:14px;background:#c8a84b;color:#111;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:15px}
+  button:disabled{opacity:.4}
+  button.sec{background:transparent;border:1px solid #333;color:#f0f0f0}
+  #log{margin-top:18px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
+  .ok{color:#27ae60}.err{color:#e74c3c}.inf{color:#8a8a8a}
+</style>
+</head>
+<body>
+<h1>Timbre<span>Ar</span> · Armar directorio</h1>
+<p class="s">Copia solo el número de depto y el piso de cada departamento del edificio al directorio público que lee la visita. No modifica ni borra ningún dato. Solo para el administrador.</p>
+
+<label for="eid">Edificio</label>
+<input id="eid" value="raventechs-hq" autocapitalize="off" autocomplete="off">
+
+<button id="btnLogin">1 · Ingresar con Google</button>
+<button id="btnRun" disabled>2 · Armar directorio</button>
+<div id="log"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, setDoc, doc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp({
+    apiKey:            "AIzaSyCvD2dC6Fw976Bi_O2OZmhKFQ7mm1uVp40",
+    authDomain:        "timbrear-cdc41.firebaseapp.com",
+    projectId:         "timbrear-cdc41",
+    storageBucket:     "timbrear-cdc41.firebasestorage.app",
+    messagingSenderId: "707107985985",
+    appId:             "1:707107985985:web:39126f161b9bb719f904c0"
+  });
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  const $ = id => document.getElementById(id);
+  const log = (t, c = 'inf') => { const d = document.createElement('div'); d.className = c; d.textContent = t; $('log').appendChild(d); };
+
+  let admin = false;
+  onAuthStateChanged(auth, u => {
+    admin = !!(u && u.email && u.email.toLowerCase() === 'rgaraventa@gmail.com');
+    $('btnRun').disabled = !admin;
+    if (u && admin) { $('btnLogin').textContent = '✓ Ingresaste como ' + u.email; log('Listo: ya podés armar el directorio.', 'ok'); }
+    else if (u) { log('Esta cuenta (' + u.email + ') no es la del administrador. Ingresá con rgaraventa@gmail.com.', 'err'); }
+  });
+
+  $('btnLogin').onclick = async () => {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { log('No se pudo ingresar con Google: ' + (e.code || e.message), 'err'); }
+  };
+
+  $('btnRun').onclick = async () => {
+    const eid = $('eid').value.trim().replace(/[^A-Za-z0-9_-]+$/, '');
+    if (!eid) { log('Escribí el id del edificio.', 'err'); return; }
+    $('btnRun').disabled = true;
+    try {
+      const snap = await getDocs(collection(db, 'edificios', eid, 'departamentos'));
+      if (snap.empty) { log('El edificio "' + eid + '" no tiene departamentos cargados (o no existe).', 'err'); $('btnRun').disabled = false; return; }
+      let n = 0;
+      for (const d of snap.docs) {
+        const x = d.data();
+        const etiqueta = x.etiqueta || d.id;
+        const piso = x.piso || ((etiqueta.match(/^\d+/) || ['1'])[0] + 'º Piso');
+        await setDoc(doc(db, 'edificios', eid, 'directorio', d.id), { etiqueta, piso }, { merge: true });
+        log('  ' + etiqueta + ' — ' + piso, 'inf'); n++;
+      }
+      log('✅ Directorio armado: ' + n + ' departamentos.', 'ok');
+      log('Ahora abrí el timbre: portero-virtual.html?edificio=' + eid, 'inf');
+    } catch (e) {
+      log('Error: ' + (e.code || e.message), 'err');
+    }
+    $('btnRun').disabled = false;
+  };
+</script>
+</body>
+</html>
