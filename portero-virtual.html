@@ -1288,7 +1288,7 @@
 
   // P3: Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/timbrear/sw-timbrear.js')
+    navigator.serviceWorker.register('/sw-timbrear.js')
       .then(() => console.log('SW TimbreAR registrado'))
       .catch(e => console.warn('SW error:', e));
   }

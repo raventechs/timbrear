@@ -1,8 +1,8 @@
 // sw-timbrear.js — Service Worker TimbreAR
-const CACHE = 'timbrear-v1.0';
+const CACHE = 'timbrear-v1.1';
 const SHELL = [
-  '/timbrear/portero-virtual.html',
-  '/timbrear/timbrear-residente.html',
+  '/portero-virtual.html',
+  '/timbrear-residente.html',
 ];
 
 self.addEventListener('install', e => {

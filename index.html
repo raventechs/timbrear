@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimbreAR</title>
+<meta name="theme-color" content="#F39C12">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icon-512-apple-180.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#FFF8EC;color:#1F3A5F;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+  .logo{width:96px;height:96px;border-radius:22px;box-shadow:0 6px 18px rgba(0,0,0,.15);margin-bottom:14px}
+  h1{font-size:28px;font-weight:800;margin-bottom:4px}
+  p.sub{color:#6b7a90;margin-bottom:26px;text-align:center}
+  .menu{width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
+  a.op{display:block;background:#fff;border:2px solid #F5D9A8;border-radius:16px;padding:16px 18px;text-decoration:none;color:inherit}
+  a.op:active{background:#FFF1D6}
+  a.op b{display:block;font-size:17px;margin-bottom:3px}
+  a.op span{font-size:13.5px;color:#6b7a90}
+</style>
+</head>
+<body>
+<img class="logo" src="/icon-192.png" alt="TimbreAR">
+<h1>TimbreAR</h1>
+<p class="sub">El portero virtual de tu edificio</p>
+<div class="menu">
+  <a class="op" href="/timbrear-admin.html"><b>🏢 Soy administrador</b><span>Consola del edificio: departamentos, residentes y llamadas</span></a>
+  <a class="op" href="/timbrear-residente.html"><b>🔔 Soy residente</b><span>Recibir el aviso cuando alguien toca el timbre</span></a>
+  <a class="op" href="/portero-virtual.html?edificio=raventechs-hq"><b>👋 Probar el timbre (demo)</b><span>Ver cómo lo usa una visita al llegar al edificio</span></a>
+</div>
+<script>
+// Si llega con parámetros de un QR o de una notificación, lo manda directo a la pantalla correcta
+(function(){
+  var q = location.search || '';
+  if (/[?&]sesion=/.test(q)) { location.replace('/timbrear-residente.html' + q + location.hash); return; }
+  if (/[?&]depto(Id)?=/.test(q)) { location.replace('/timbrear-residente.html' + q + location.hash); return; }
+  if (/[?&]edificio=/.test(q)) { location.replace('/portero-virtual.html' + q + location.hash); return; }
+})();
+</script>
+</body>
+</html>
