@@ -820,6 +820,7 @@
   // Sin edificio en el link no hay nada para mostrar: se manda a la demo guiada
   if (!params.get('edificio')) { location.replace('/demo.html'); }
 
+  let diag = [];   // pistas visibles si el edificio no tiene departamentos
   let CONFIG = {
     edificio:      { nombre: "Cargando...", direccion: "" },
     departamentos: []
@@ -844,6 +845,7 @@
 
       if (!edificioSnap.exists()) {
         console.warn('Edificio no encontrado, usando modo demo');
+        diag.push('el edificio "' + edificioId + '" no existe en la base');
         CONFIG.edificio = { nombre: "Edificio Demo", direccion: "" };
       } else {
         const data = edificioSnap.data();
@@ -875,6 +877,7 @@
           }
         } catch (e) {
           console.warn('Sin directorio ni acceso al listado anterior:', e.message);
+          diag.push('sin directorio y no se pudo leer el listado anterior (' + (e.code || e.message) + ')');
         }
       }
       if (!CONFIG.departamentos.length) console.warn('Sin departamentos para mostrar');
@@ -886,6 +889,8 @@
 
     } catch(e) {
       console.error('Error cargando edificio:', e);
+      diag.push('error al cargar: ' + (e.code || e.message));
+      try { renderDepartamentos(); } catch (_) {}
     }
   }
 
@@ -928,7 +933,7 @@
     wrap.innerHTML = '';
 
     if (!CONFIG.departamentos.length) {
-      wrap.innerHTML = '<p style="text-align:center;color:var(--plata);padding:40px 24px;line-height:1.5">Este edificio todavía no tiene departamentos cargados.<br>Avisale al administrador.</p>';
+      wrap.innerHTML = '<p style="text-align:center;color:var(--plata);padding:40px 24px;line-height:1.5">Este edificio todavía no tiene departamentos cargados.<br>Avisale al administrador.<br><small style="opacity:.6">' + edificioId + (diag.length ? ' · ' + diag.join(' · ') : '') + '</small></p>';
       return;
     }
 
