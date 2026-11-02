@@ -55,7 +55,7 @@
     admin = !!(u && u.email && u.email.toLowerCase() === 'rgaraventa@gmail.com');
     $('btnRun').disabled = !admin;
     if (u && admin) { $('btnLogin').textContent = '✓ Ingresaste como ' + u.email; log('Listo: ya podés armar el directorio.', 'ok'); }
-    else if (u) { log('Esta cuenta (' + u.email + ') no es la del administrador. Ingresá con rgaraventa@gmail.com.', 'err'); }
+    else if (u && u.email) { log('Esta cuenta (' + u.email + ') no es la del administrador. Ingresá con rgaraventa@gmail.com.', 'err'); }
   });
 
   $('btnLogin').onclick = async () => {
