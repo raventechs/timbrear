@@ -2,8 +2,10 @@
 <html lang="es">
 <!--
   ════════════════════════════════════════════════════════════
-  TIMBREAR — RESIDENTE — v1.1
-  Fecha: 2026-07-13
+  TIMBREAR — RESIDENTE — v1.2
+  Fecha: 2026-11-08
+  v1.2 (reparación): la función del sonido del timbre (reproducirSonidoMP3) estaba cortada a la mitad y la página no se podía ejecutar; se completó (reproduce notification.mp3 y, si el celular no lo deja, el ding-dong generado) y se agregó getDocs al import del historial.
+  v1.2: PRUEBA DE 14 DÍAS SIN BLOQUEO. Si el edificio tiene demoHasta: cartel ámbar con los días y, al vencer, cartel rojo titilante fijo que no se puede cerrar con botón para activar por WhatsApp. Los edificios sin demoHasta no ven nada. Solo lee; no toca datos ni reglas.
   NUEVO:
   - Historial de visitas dinámico desde Firestore (sesiones)
     con foto si fue capturada
@@ -672,6 +674,15 @@
       cursor: pointer;
       font-family: 'Inter', sans-serif;
     }
+
+    /* Prueba de 14 días sin bloqueo: cartel fijo */
+    .barPrueba{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:150;border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;font-size:15px;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+    .barPrueba a{background:#fff;color:#7f1d1d;border-radius:10px;padding:10px 14px;font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap}
+    .barPrueba.curso{background:#c8a84b;color:#1a1a1a;font-size:14px;padding:9px 12px}.barPrueba.curso a{color:#1a1a1a;border:1px solid #1a1a1a}
+    .barPrueba.venc{background:#c62828;color:#fff;border:2px solid #fff;animation:blinkPrueba 1s infinite}
+    @keyframes blinkPrueba{0%,100%{background:#c62828;opacity:1}50%{background:#7f1d1d;opacity:.8}}
+    @media (prefers-reduced-motion:reduce){.barPrueba.venc{animation:none}}
+    body.conPrueba .screen{padding-bottom:84px}
   </style>
 </head>
 <body>
@@ -867,7 +878,7 @@
   // ═══════════════════════════════════════════════════════
   import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, doc, getDoc, collection, query, where, orderBy,
-           onSnapshot, addDoc, updateDoc, serverTimestamp }
+           onSnapshot, addDoc, updateDoc, serverTimestamp, getDocs }
                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
@@ -913,6 +924,28 @@
   }
 
   await ensureAuth();
+
+  // ── Prueba de 14 días del edificio (sin bloqueo) ──
+  // Si el edificio tiene el campo demoHasta: cartel ámbar con los días y, al vencer, cartel rojo titilante fijo que no se puede cerrar.
+  // Los edificios que no tienen demoHasta (los actuales) no ven nada. Solo lee; no escribe nada.
+  async function chequearPrueba() {
+    try {
+      const sn = await getDoc(doc(db, 'edificios', edificioId));
+      const v = sn.exists() ? sn.data().demoHasta : null;
+      let b = document.getElementById('barPrueba');
+      const ms = v ? (v.toMillis ? v.toMillis() : Number(v)) : 0;
+      if (!ms) { if (b) b.remove(); document.body.classList.remove('conPrueba'); return; }
+      const dias = Math.ceil((ms - Date.now()) / 86400000);
+      const venc = dias <= 0;
+      if (!b) { b = document.createElement('div'); b.id = 'barPrueba'; document.body.appendChild(b); }
+      document.body.classList.add('conPrueba');
+      const msg = encodeURIComponent('Hola, quiero activar TimbreAR para mi edificio (' + ((sn.data().nombre) || edificioNombreParam) + ').');
+      b.className = 'barPrueba ' + (venc ? 'venc' : 'curso');
+      b.innerHTML = '<span>' + (venc ? '⚠️ Terminó la prueba gratis del edificio. Activá TimbreAR para seguir sin esta alerta.'
+        : 'Prueba gratis: quedan ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>' +
+        '<a href="https://wa.me/5491136547592?text=' + msg + '" target="_blank" rel="noopener">Activar</a>';
+    } catch (e) { console.warn('prueba:', e.message); }
+  }
 
   // ── Registrar Service Worker para push en background ──
   async function registrarSW() {
@@ -1401,8 +1434,16 @@
   };
 
   // ── Sonido mp3 para la llamada entrante ──────────────
+  let _mp3Audio = null;
   function reproducirSonidoMP3() {
     try {
+      if (!_mp3Audio) _mp3Audio = new Audio('/notification.mp3');
+      _mp3Audio.currentTime = 0;
+      const p = _mp3Audio.play();
+      if (p && p.catch) p.catch(() => _tocarUnaVez());
+    } catch (e) { _tocarUnaVez(); }
+  }
+
   // ═══════════════════════════════════════════════════════
   //  HISTORIAL DE VISITAS — dinámico desde Firestore
   // ═══════════════════════════════════════════════════════
@@ -1415,8 +1456,7 @@
         where('deptoId', '==', deptoId),
         orderBy('creadaEn', 'desc')
       );
-      const snap = await getDocs ? getDocs(q) : null;
-      if (!snap) return;
+      const snap = await getDocs(q);
       const items = [];
       snap.forEach(d => items.push({ id: d.id, ...d.data() }));
       renderHistorialVisitas(items.slice(0, 10));
@@ -1566,6 +1606,9 @@
 
   // Cargar DND al iniciar
   cargarDND();
+
+  // Prueba de 14 días del edificio (se llama al final porque usa edificioId)
+  chequearPrueba();
 
 </script>
 </body>

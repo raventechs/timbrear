@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- TimbreAr Admin 1.1 — 2026-10-26 — BACKUP (no tenía): automático diario + manual + restaurar en el Dashboard. -->
+  <!-- TimbreAr Admin 1.2 — 2026-11-08 — PRUEBA 14 DÍAS: el edificio en «Período de prueba» arranca con 14 días (demoHasta) y la tabla muestra los días, con botones «Activar cliente» y «+7 días». Hoy guarda solo en este navegador (igual que el resto de la consola); cuando los edificios pasen a la base, el campo viaja igual. — BACKUP (no tenía): automático diario + manual + restaurar en el Dashboard. -->
   <title>TimbreAr — Consola Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
@@ -1031,9 +1031,10 @@ function buildEdificiosTableHTML(list) {
             </div>
           </td>
           <td><span style="color:var(--plata);font-size:12px;text-transform:capitalize">${e.plan}</span></td>
-          <td>${estadoPill}</td>
+          <td>${estadoPill}${(() => { if (!e.demoHasta) return ''; const d = Math.ceil((e.demoHasta - Date.now()) / 86400000); return d > 0 ? `<div style="font-size:11px;color:var(--dorado);margin-top:3px">${d} d de prueba</div>` : `<div style="font-size:11px;color:#fff;background:var(--rojo);border-radius:6px;padding:2px 6px;margin-top:3px;display:inline-block">PRUEBA VENCIDA</div>`; })()}</td>
           <td>
             <div style="display:flex;gap:6px;">
+              ${e.demoHasta ? `<button class="btn btn-outline btn-sm" onclick="pruebaEdificio('${e.id}','activar')">✅ Activar cliente</button><button class="btn btn-outline btn-sm" onclick="pruebaEdificio('${e.id}','mas')">+7 días</button>` : ''}
               <button class="btn btn-outline btn-sm" onclick="editarEdificio('${e.id}')">✏️ Editar</button>
               <button class="btn btn-danger btn-sm" onclick="eliminarEdificio('${e.id}')">🗑️</button>
             </div>
@@ -1178,6 +1179,11 @@ function guardarEdificio() {
     departamentos: deptos.map(d => ({ ...d })),
     creadoEn: editandoId ? (edificios.find(e => e.id === editandoId)?.creadoEn || Date.now()) : Date.now()
   };
+  // Prueba de 14 días: se conserva la que ya tenía; si es nuevo (o pasa a «prueba») y no tiene, arranca ahora
+  const previo = editandoId ? edificios.find(e => e.id === editandoId) : null;
+  if (previo && previo.demoHasta !== undefined) edificio.demoHasta = previo.demoHasta;
+  if (edificio.estado === 'prueba' && !edificio.demoHasta) edificio.demoHasta = Date.now() + 14 * 86400000;
+  if (edificio.estado === 'activo') edificio.demoHasta = null;
 
   if (editandoId) {
     const idx = edificios.findIndex(e => e.id === editandoId);
@@ -1191,6 +1197,15 @@ function guardarEdificio() {
   localStorage.setItem('timbrear_edificios', JSON.stringify(edificios));
   editandoId = null;
   showView('edificios');
+}
+
+function pruebaEdificio(id, acc) {
+  const e = edificios.find(ed => ed.id === id);
+  if (!e) return;
+  if (acc === 'activar') { e.demoHasta = null; e.estado = 'activo'; showToast('✅ Cliente activado'); }
+  else { e.demoHasta = Math.max(Date.now(), e.demoHasta || 0) + 7 * 86400000; e.estado = 'prueba'; showToast('+7 días de prueba'); }
+  localStorage.setItem('timbrear_edificios', JSON.stringify(edificios));
+  renderEdificiosTable();
 }
 
 function cancelarForm() {

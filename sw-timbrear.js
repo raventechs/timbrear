@@ -1,5 +1,5 @@
 // sw-timbrear.js — Service Worker TimbreAR
-const CACHE = 'timbrear-v1.1';
+const CACHE = 'timbrear-v1.2';
 const SHELL = [
   '/portero-virtual.html',
   '/timbrear-residente.html',
